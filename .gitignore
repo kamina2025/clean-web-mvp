@@ -10,3 +10,5 @@ Thumbs.db
 # Logs y directorios temporales
 *.log
 node_modules/
+api-rcp.env
+extension/config.js
