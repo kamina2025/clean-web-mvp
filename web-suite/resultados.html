@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Resultados de Búsqueda - Web Limpia</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f8f9fa; padding: 40px; max-width: 800px; margin: 0 auto; }
+    h2 { color: #334155; }
+    .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .card a { text-decoration: none; color: #0e86d4; font-size: 1.2rem; font-weight: bold; }
+    .card p { color: #64748b; margin: 5px 0 0 0; }
+    .tag { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h2>Resultados para: <span id="query-term" style="color: #0e86d4;"></span></h2>
+  <div id="results-container"></div>
+
+  <script>
+    // Función auxiliar para quitar acentos/tildes y convertir a minúsculas
+    function limpiarTexto(texto) {
+      return (texto || '')
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawQuery = urlParams.get('q') || '';
+    const queryLimpia = limpiarTexto(rawQuery);
+
+    document.getElementById('query-term').innerText = rawQuery || "Todos los contenidos";
+
+    // Catálogo de experimentos
+    const experimentos = [
+      {
+        titulo: "Experimento 1: Reproductor de Video Pay-Per-Click",
+        url: "exp_video.html",
+        descripcion: "Demostración de cobro en Nano (XNO) al iniciar la reproducción de un video.",
+        categoria: "Video / Pay-Per-View"
+      },
+      {
+        titulo: "Experimento 2: Galería Fotográfica con Propinas y Likes",
+        url: "exp_galeria.html",
+        descripcion: "Imágenes de alta calidad con botones para enviar Me Gusta o Propinas directo al creador.",
+        categoria: "Imágenes / Creadores / Galería"
+      },
+      {
+        titulo: "Experimento 3: Plataforma de Música por Canción",
+        url: "exp_musica.html",
+        descripcion: "Escucha pistas de audio pagando una microtarifa automática por reproducción.",
+        categoria: "Música / Streaming"
+      }
+    ];
+
+    const container = document.getElementById('results-container');
+    
+    // Filtrado tolerante a tildes y mayúsculas
+    const filtrados = experimentos.filter(exp => {
+      const tituloLimpio = limpiarTexto(exp.titulo);
+      const descLimpia = limpiarTexto(exp.descripcion);
+      const catLimpia = limpiarTexto(exp.categoria);
+
+      return tituloLimpio.includes(queryLimpia) || 
+             descLimpia.includes(queryLimpia) ||
+             catLimpia.includes(queryLimpia);
+    });
+
+    if (filtrados.length === 0) {
+      container.innerHTML = "<p>No se encontraron experimentos que coincidan con la búsqueda.</p>";
+    } else {
+      filtrados.forEach(exp => {
+        container.innerHTML += `
+          <div class="card">
+            <a href="${exp.url}">${exp.titulo}</a>
+            <p>${exp.descripcion}</p>
+            <span class="tag">${exp.categoria}</span>
+          </div>
+        `;
+      });
+    }
+  </script>
+</body>
+</html>

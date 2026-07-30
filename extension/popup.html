@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Billetera Web Limpia</title>
+  <style>
+    :root {
+      --bg: #121214;
+      --card: #1e1e24;
+      --primary: #20c997;
+      --primary-hover: #1baa80;
+      --danger: #e63946;
+      --text: #f8f9fa;
+      --subtext: #a0a0a0;
+      --border: #2d2d35;
+    }
+
+    body {
+      width: 320px;
+      margin: 0;
+      padding: 16px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-sizing: border-box;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .balance-title {
+      font-size: 12px;
+      color: var(--subtext);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .balance-amount {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 6px 0;
+    }
+
+    .address-box {
+      font-size: 10px;
+      word-break: break-all;
+      background: var(--bg);
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      color: var(--subtext);
+      cursor: pointer;
+    }
+
+    #qrcode {
+      display: flex;
+      justify-content: center;
+      margin: 12px 0;
+    }
+
+    #qrcode img {
+      border-radius: 8px;
+      padding: 6px;
+      background: white;
+    }
+
+    .switch-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #333;
+      transition: .3s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: var(--border);
+    }
+
+    button.danger {
+      color: var(--danger);
+      border-color: rgba(230, 57, 70, 0.3);
+    }
+
+    button.danger:hover {
+      background: rgba(230, 57, 70, 0.1);
+    }
+
+    .history-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--subtext);
+      margin-bottom: 8px;
+      text-align: left;
+    }
+
+    .history-list {
+      max-height: 110px;
+      overflow-y: auto;
+      font-size: 11px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-item:last-child {
+      border-bottom: none;
+    }
+
+    .tx-hash {
+      color: var(--subtext);
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Tarjeta de Saldo y Dirección -->
+  <!-- En popup.html, dentro de la tarjeta de saldo -->
+<div class="card">
+  <div class="balance-title">Saldo Disponible</div>
+  <div class="balance-amount">
+    <span id="balanceText">0.000000 XNO</span>
+    <button id="btnRefresh" style="padding: 2px 6px; margin-left: 6px; font-size: 10px;" title="Actualizar saldo desde la red">🔄</button>
+  </div>
+  
+  <div id="qrcode"></div>
+
+  <div class="address-box" id="addressText" title="Clic para copiar">
+    Cargando dirección...
+  </div>
+</div>
+
+  <!-- Control de Autopago -->
+  <div class="card">
+    <div class="switch-container">
+      <span>Micropagos Automáticos</span>
+      <label class="switch">
+        <input type="checkbox" id="autoPayToggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Botones de Llaves -->
+  <div class="btn-group">
+    <button id="btnExport">Exportar Semilla</button>
+    <button id="btnImport" class="danger">Importar Semilla</button>
+  </div>
+
+  <!-- Historial Local -->
+  <div class="history-title">Últimos Pagos Enviados</div>
+  <div class="history-list" id="historyList">
+    <div style="color: var(--subtext); text-align: center; padding: 10px;">Sin transacciones recientes</div>
+  </div>
+
+  <!-- Librería Liviana para Códigos QR -->
+  <script src="qrcode.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

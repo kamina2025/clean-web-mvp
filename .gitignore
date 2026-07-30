@@ -1,0 +1,12 @@
+# Claves de la extensión o llaves privadas de prueba
+*.pem
+*.crx
+.env
+
+# Archivos de sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs y directorios temporales
+*.log
+node_modules/

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Experimento 2: Galería de Fotografía</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f1f5f9; padding: 30px; text-align: center; }
+    .gallery { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-top: 20px; }
+    .card { background: white; border-radius: 10px; overflow: hidden; width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .card img { width: 100%; height: 200px; object-fit: cover; }
+    .actions { padding: 15px; display: flex; justify-content: space-around; }
+    .btn-action { border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .btn-like { background: #ec4899; color: white; }
+    .btn-tip { background: #8b5cf6; color: white; }
+    .log { margin-top: 20px; color: #475569; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <h1>🖼️ Galería Fotográfica</h1>
+  <p>Apoya a los creadores directamente con Likes o Propinas instantáneas.</p>
+
+  <div class="gallery">
+    <div class="card">
+      <img src="https://picsum.photos/id/1018/300/200" alt="Naturaleza">
+      <div class="actions">
+        <button class="btn-action btn-like" onclick="enviarAccion('Like (0.00005 XNO)', 0.00005)">❤️ Like (0.00005)</button>
+        <button class="btn-action btn-tip" onclick="enviarAccion('Propina (0.0002 XNO)', 0.0002)">☕ Propina (0.0002)</button>
+      </div>
+    </div>
+    <div class="card">
+      <img src="https://picsum.photos/id/1015/300/200" alt="Montañas">
+      <div class="actions">
+        <button class="btn-action btn-like" onclick="enviarAccion('Like (0.00005 XNO)', 0.00005)">❤️ Like (0.00005)</button>
+        <button class="btn-action btn-tip" onclick="enviarAccion('Propina (0.0002 XNO)', 0.0002)">☕ Propina (0.0002)</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="log" id="actionLog">Haz clic en un botón para enviar valor al fotógrafo.</div>
+
+ <script>
+  const CREADOR_NANO = "nano_1r9hnf3zagcruh4k8gfp8izf1c67f3codi1xsxiochokg9xdstfrm6nc4o6d";
+
+  function enviarAccion(tipo, monto) {
+    document.getElementById('actionLog').innerText = `⏳ Procesando ${tipo} en la blockchain...`;
+
+    window.postMessage({
+      type: "CLEANWEB_MICROPAGO_TRIGGER",
+      direccionDestino: CREADOR_NANO,
+      montoXNO: monto,
+      concepto: tipo
+    }, "*");
+  }
+
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "CLEANWEB_PAGO_RESPUESTA") {
+      const log = document.getElementById('actionLog');
+      if (event.data.exito) {
+        log.innerText = `🎉 ¡Transacción confirmada en la red! HASH: ${event.data.hash.substring(0, 16)}...`;
+      } else {
+        log.innerText = `❌ No se pudo completar la acción: ${event.data.error}`;
+      }
+    }
+  });
+</script>
+</body>
+</html>

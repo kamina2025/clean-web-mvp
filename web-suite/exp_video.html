@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Experimento 1: Video Pay-Per-View</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 30px; background: #0f172a; color: white; text-align: center; }
+    .video-container { width: 100%; max-width: 640px; margin: 20px auto; background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    video { width: 100%; border-radius: 8px; }
+    .btn-pay { background: #10b981; color: white; border: none; padding: 12px 24px; font-size: 1rem; border-radius: 6px; cursor: pointer; margin-top: 15px; }
+    .status { margin-top: 15px; font-size: 0.9rem; color: #38bdf8; }
+  </style>
+</head>
+<body>
+  <h1>🎬 Video Pay-Per-View</h1>
+  <p>Costo por reproducción: <strong>0.0001 XNO</strong></p>
+
+  <div class="video-container">
+    <video id="myVideo" controls poster="https://via.placeholder.com/640x360/1e293b/ffffff?text=Haz+clic+para+Desbloquear">
+      <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
+    </video>
+    <br>
+    <button class="btn-pay" onclick="solicitarPagoVideo()">▶️ Desbloquear / Reproducir (0.0001 XNO)</button>
+    <div class="status" id="videoStatus">Estado: Esperando confirmación de reproducción...</div>
+  </div>
+
+  <script>
+  // Cambia esta dirección por tu cuenta de destino real para pruebas
+  const CREADOR_NANO = "nano_1r9hnf3zagcruh4k8gfp8izf1c67f3codi1xsxiochokg9xdstfrm6nc4o6d";
+  const PRECIO_VIDEO = 0.0001;
+
+  function solicitarPagoVideo() {
+    const statusDiv = document.getElementById('videoStatus');
+    statusDiv.innerText = "⏳ Emitiendo transacción a la red Nano...";
+
+    window.postMessage({
+      type: "CLEANWEB_MICROPAGO_TRIGGER",
+      direccionDestino: CREADOR_NANO,
+      montoXNO: PRECIO_VIDEO,
+      concepto: "Pay-Per-View Video"
+    }, "*");
+  }
+
+  // Escuchar la respuesta de la extensión
+  window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "CLEANWEB_PAGO_RESPUESTA") {
+      const statusDiv = document.getElementById('videoStatus');
+      if (event.data.exito) {
+        const video = document.getElementById('myVideo');
+        video.play();
+        statusDiv.innerText = `✅ ¡Pago verificado en Blockchain! HASH: ${event.data.hash.substring(0, 12)}...`;
+      } else {
+        statusDiv.innerText = `❌ Error en el pago: ${event.data.error || 'Saldo insuficiente o timeout'}`;
+      }
+    }
+  });
+</script>
+</body>
+</html>
