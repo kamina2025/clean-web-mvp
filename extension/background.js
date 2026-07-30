@@ -1,29 +1,42 @@
-importScripts('nanocurrency.min.js');
+// =================================================================
+// 📦 CARGA DE CONFIGURACIÓN Y LIBRERÍAS
+// =================================================================
+// Cargar config.js primero para que la variable CONFIG esté disponible
+try {
+  importScripts('config.js');
+} catch (e) {
+  console.warn("⚠️ No se encontró config.js local, se usará la clave por defecto/fallback.");
+}
 
-console.log("✅ Librería Nano cargada correctamente");
+// Cargar la librería de Nano
+importScripts('nanocurrency.min.js');
 
 // =================================================================
 // ⚙️ CONFIGURACIÓN Y CONTROL DE CUOTA NANO.TO & APPS SCRIPT
 // =================================================================
-const NANO_TO_API_KEY = "TU_API_KEY_AQUI"; 
+// Cargar desde config.js si existe, o usar un fallback
+const NANO_TO_API_KEY = (typeof CONFIG !== "undefined" && CONFIG.NANO_TO_API_KEY) 
+  ? CONFIG.NANO_TO_API_KEY 
+  : "TU_API_KEY_AQUI";
+
 const NANO_RPC_ENDPOINT = NANO_TO_API_KEY 
-  ? `https://rpc.nano.to/?key=${NANO_TO_API_KEY}`
+  ? `https://rpc.nano.to/?key=${NANO_TO_API_KEY}` 
   : "https://rpc.nano.to";
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHcnhmQ1nfrdKPbXe4vgrVFYj_8eMybWjHJ5bmGCARImsyDTa6DNFITlB6zo9RYG9UsA/exec";
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbzHcnhmQ1nfrdKPbXe4vgrVFYj_8eMybWjHJ5bmGCARImsyDTa6DNFITlB6zo9RYG9UsA/exec";
 
 // Asegurar compatibilidad de la librería
 const nanocurrency = self.NanocurrencyWeb || window.NanocurrencyWeb || self.nanocurrency;
 
 console.log("🛡️ Service Worker de Web Limpia (Modo Auto-Recepción + Indexador) iniciado.");
-
 // =================================================================
 // 🛠️ FUNCIONES AUXILIARES CRIPTOGRÁFICAS Y CONVERSIÓN
 // =================================================================
 function generarSemillaHexSegura() {
   const array = new Uint8Array(32);
   self.crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 function nanoToRaw(montoXNO) {
@@ -66,10 +79,10 @@ async function obtenerBilleteraLocal() {
       let seed = result.nanoSeed;
       let address = result.nanoAddress;
 
-      if (!seed || typeof seed !== 'string' || !/^[0-9a-fA-F]{64}$/.test(seed.trim())) {
+      if (!seed || typeof seed !== "string" || !/^[0-9a-fA-F]{64}$/.test(seed.trim())) {
         console.log("⚠️ Semilla vacía o inválida detectada. Generando nueva semilla...");
-        seed = generarSemillaHexSegura(); 
-        
+        seed = generarSemillaHexSegura();
+
         const cuentas = nanocurrency.wallet.legacyAccounts(seed, 0, 1);
         const secretKey = cuentas[0].privateKey;
         address = cuentas[0].address;
@@ -83,7 +96,7 @@ async function obtenerBilleteraLocal() {
         const cuentas = nanocurrency.wallet.legacyAccounts(seed, 0, 1);
         const secretKey = cuentas[0].privateKey;
         address = cuentas[0].address;
-        
+
         resolve({ seed, address, secretKey });
       }
     });
@@ -105,7 +118,7 @@ async function procesarBloquesPendientes(wallet) {
         threshold: "1"
       })
     });
-    
+
     const dataReceivable = await resReceivable.json();
     const blocks = dataReceivable.blocks;
 
@@ -117,7 +130,7 @@ async function procesarBloquesPendientes(wallet) {
     let procesados = 0;
 
     for (const sendHash in blocks) {
-      const amountRaw = typeof blocks[sendHash] === 'object' ? blocks[sendHash].amount : blocks[sendHash];
+      const amountRaw = typeof blocks[sendHash] === "object" ? blocks[sendHash].amount : blocks[sendHash];
 
       const resAccount = await fetch(NANO_RPC_ENDPOINT, {
         method: "POST",
@@ -130,9 +143,10 @@ async function procesarBloquesPendientes(wallet) {
       const frontier = accountInfo.frontier || "0000000000000000000000000000000000000000000000000000000000000000";
       const representative = accountInfo.representative || wallet.address;
 
-      const workRoot = frontier === "0000000000000000000000000000000000000000000000000000000000000000"
-        ? nanocurrency.wallet.legacyAccounts(wallet.seed, 0, 1)[0].publicKey
-        : frontier;
+      const workRoot =
+        frontier === "0000000000000000000000000000000000000000000000000000000000000000"
+          ? nanocurrency.wallet.legacyAccounts(wallet.seed, 0, 1)[0].publicKey
+          : frontier;
 
       const resWork = await fetch(NANO_RPC_ENDPOINT, {
         method: "POST",
@@ -154,7 +168,7 @@ async function procesarBloquesPendientes(wallet) {
       };
 
       const signedBlock = nanocurrency.block.receive(receiveData, wallet.secretKey);
-      const blockPayload = typeof signedBlock === 'string' ? JSON.parse(signedBlock) : signedBlock;
+      const blockPayload = typeof signedBlock === "string" ? JSON.parse(signedBlock) : signedBlock;
 
       const resProcess = await fetch(NANO_RPC_ENDPOINT, {
         method: "POST",
@@ -186,7 +200,7 @@ async function procesarBloquesPendientes(wallet) {
 // =================================================================
 async function enviarMicropagoReal(direccionDestino, montoXNO) {
   console.log(`📡 Iniciando proceso de pago...`);
-  
+
   try {
     const wallet = await obtenerBilleteraLocal();
     await procesarBloquesPendientes(wallet);
@@ -215,9 +229,10 @@ async function enviarMicropagoReal(direccionDestino, montoXNO) {
       return { success: false, error: "Saldo insuficiente" };
     }
 
-    const workRoot = frontier === "0000000000000000000000000000000000000000000000000000000000000000"
-      ? nanocurrency.wallet.legacyAccounts(wallet.seed, 0, 1)[0].publicKey
-      : frontier;
+    const workRoot =
+      frontier === "0000000000000000000000000000000000000000000000000000000000000000"
+        ? nanocurrency.wallet.legacyAccounts(wallet.seed, 0, 1)[0].publicKey
+        : frontier;
 
     console.log("2️⃣ Solicitando Proof-of-Work (PoW)...");
     const resWork = await fetch(NANO_RPC_ENDPOINT, {
@@ -236,14 +251,14 @@ async function enviarMicropagoReal(direccionDestino, montoXNO) {
       walletBalanceRaw: String(balanceRaw),
       fromAddress: wallet.address,
       toAddress: direccionDestino,
-      representativeAddress: representative, 
+      representativeAddress: representative,
       frontier: frontier,
       amountRaw: String(amountRaw),
       work: workData.work
     };
 
     const signedBlock = nanocurrency.block.send(sendData, wallet.secretKey);
-    const blockPayload = typeof signedBlock === 'string' ? JSON.parse(signedBlock) : signedBlock;
+    const blockPayload = typeof signedBlock === "string" ? JSON.parse(signedBlock) : signedBlock;
 
     console.log("3️⃣ Publicando bloque firmado...");
     const resProcess = await fetch(NANO_RPC_ENDPOINT, {
@@ -265,7 +280,6 @@ async function enviarMicropagoReal(direccionDestino, montoXNO) {
       console.error("❌ La red rechazó el bloque:", processData);
       return { success: false, error: JSON.stringify(processData) };
     }
-
   } catch (err) {
     console.error("❌ Error en la transacción:", err);
     return { success: false, error: err.message };
@@ -292,8 +306,7 @@ async function registrarMetricaIndexador(datosEvento) {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
-    }).catch(err => console.warn("Métrica no registrada:", err));
-
+    }).catch((err) => console.warn("Métrica no registrada:", err));
   } catch (err) {
     console.error("⚠️ Error en métrica:", err);
   }
@@ -307,19 +320,19 @@ chrome.runtime.onMessage.addListener((mensaje, sender, sendResponse) => {
     // Extraer datos recibidos desde content_script.js
     const { site_id, destino, monto, dwell_time_sec, url, titulo } = mensaje.datos || {};
 
-    console.log(`📩 Solicitud recibida desde: ${titulo || 'Página'} (${url || 'N/A'})`);
+    console.log(`📩 Solicitud recibida desde: ${titulo || "Página"} (${url || "N/A"})`);
     console.log(`💸 Procesando micropago: ${monto} XNO -> ${destino}`);
 
     // Ejecutar la función de envío real en la red Nano
     enviarMicropagoReal(destino, monto)
-      .then(resultado => {
+      .then((resultado) => {
         // Normalizar resultado para soportar tanto retorno de String (hash) como de Objeto ({ success, hash })
         const esExitoso = typeof resultado === "object" ? resultado.success !== false : Boolean(resultado);
-        const txHash = typeof resultado === "object" ? (resultado.hash || resultado.blockHash) : resultado;
+        const txHash = typeof resultado === "object" ? resultado.hash || resultado.blockHash : resultado;
 
         if (esExitoso && txHash) {
           console.log(`✅ Micropago automático completado. Hash: ${txHash}`);
-          
+
           // 1. Guardar en historial local (0 consumo RPC)
           if (typeof guardarHistorialLocal === "function") {
             guardarHistorialLocal(monto, txHash);
@@ -341,9 +354,10 @@ chrome.runtime.onMessage.addListener((mensaje, sender, sendResponse) => {
           // Responder a content_script.js
           sendResponse({ exito: true, hash: txHash });
         } else {
-          const errorMsg = (typeof resultado === "object" && resultado.error) ? resultado.error : "Transacción no confirmada";
+          const errorMsg =
+            typeof resultado === "object" && resultado.error ? resultado.error : "Transacción no confirmada";
           console.error("❌ Transacción fallida:", errorMsg);
-          
+
           if (typeof registrarMetricaIndexador === "function") {
             registrarMetricaIndexador({
               site_id: site_id || "SITE-UNREGISTERED",
@@ -359,8 +373,8 @@ chrome.runtime.onMessage.addListener((mensaje, sender, sendResponse) => {
           sendResponse({ exito: false, error: errorMsg });
         }
       })
-      .catch(err => {
-        const errorString = err ? (err.message || err.toString()) : "Error desconocido";
+      .catch((err) => {
+        const errorString = err ? err.message || err.toString() : "Error desconocido";
         console.error("❌ Error inesperado durante el micropago:", errorString);
 
         if (typeof registrarMetricaIndexador === "function") {

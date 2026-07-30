@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Mvp web limpia",
+  "version": "1.0",
+  "description": "Batería de navegación para la Web Limpia. Micropagos automáticos y sin comisiones con Nano (XNO).",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+   
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Abrir Batería Nano"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

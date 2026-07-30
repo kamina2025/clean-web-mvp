@@ -1,5 +1,43 @@
-// popup.js
 const NANO_RPC_ENDPOINT = "https://rpc.nano.to/?key=RPC-KEY-EDDAAAC6AE5E4F6C98823E6758FD88";
+
+// 1. Generar semilla segura de 64 caracteres hex
+function generarSemillaSegura() {
+  const array = new Uint8Array(32);
+  window.crypto.getRandomValues(array);
+  return Array.from(array, byte => ('0' + byte.toString(16)).slice(-2)).join('').toUpperCase();
+}
+
+// 2. Detectar la librería (incluyendo NanocurrencyWeb que usa tu nanocurrency.min.js)
+function obtenerLibreriaNano() {
+  if (typeof NanocurrencyWeb !== "undefined") return NanocurrencyWeb;
+  if (typeof nanocurrency !== "undefined") return nanocurrency;
+  if (typeof NanoCurrency !== "undefined") return NanoCurrency;
+  if (typeof window.NanocurrencyWeb !== "undefined") return window.NanocurrencyWeb;
+  return null;
+}
+
+// 3. Función universal para derivar la primera dirección (index 0) desde la seed
+function derivarDireccionNano(seed) {
+  const nanoLib = obtenerLibreriaNano();
+  if (!nanoLib) return null;
+
+  try {
+    // Método Estándar de nanocurrency-web (wallet.legacyAccounts)
+    if (nanoLib.wallet && typeof nanoLib.wallet.legacyAccounts === "function") {
+      const cuentas = nanoLib.wallet.legacyAccounts(seed, 0, 0);
+      return cuentas[0]?.address || null;
+    }
+    // Métodos alternativos
+    if (typeof nanoLib.deriveSecretKey === "function") {
+      const secretKey = nanoLib.deriveSecretKey(seed, 0);
+      const publicKey = nanoLib.derivePublicKey(secretKey);
+      return nanoLib.deriveAddress(publicKey);
+    }
+  } catch (err) {
+    console.error("Error derivando dirección Nano:", err);
+  }
+  return null;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   const balanceText = document.getElementById("balanceText");
@@ -9,10 +47,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const qrcodeDiv = document.getElementById("qrcode");
   const btnRefresh = document.getElementById("btnRefresh");
 
-  // 1. Cargar datos desde almacenamiento local (0 consumo RPC)
-  chrome.storage.local.get(["nanoAddress", "lastBalance", "autoPayEnabled", "historyTx"], (res) => {
-    const address = res.nanoAddress || "Generando billetera...";
-    addressText.innerText = address;
+  // A. Cargar o Crear Billetera al abrir
+  chrome.storage.local.get(["nanoSeed", "nanoAddress", "lastBalance", "autoPayEnabled", "historyTx"], (res) => {
+    let seed = res.nanoSeed;
+    let address = res.nanoAddress;
+
+    // Si NO hay semilla, se crea una automáticamente
+    if (!seed) {
+      seed = generarSemillaSegura();
+      chrome.storage.local.set({ nanoSeed: seed });
+      console.log("Nueva semilla generada automáticamente.");
+    }
+
+    // Si NO hay dirección guardada (o está vacía), la derivamos con la librería
+    if (!address || !address.startsWith("nano_")) {
+      const direccionCalculada = derivarDireccionNano(seed);
+      if (direccionCalculada) {
+        address = direccionCalculada;
+        chrome.storage.local.set({ nanoAddress: address });
+      }
+    }
+
+    addressText.innerText = address || "Sin billetera (Error librería)";
 
     if (res.lastBalance) {
       balanceText.innerText = `${res.lastBalance} XNO`;
@@ -22,22 +78,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     autoPayToggle.checked = res.autoPayEnabled !== false;
 
-    // Generar QR comprobando disponibilidad de la librería
-    if (res.nanoAddress && qrcodeDiv && res.nanoAddress.startsWith("nano_")) {
+    // Generar código QR
+    if (address && qrcodeDiv && address.startsWith("nano_")) {
       qrcodeDiv.innerHTML = "";
       try {
-        if (typeof QRCode !== "undefined") {
-          new QRCode(qrcodeDiv, {
-            text: res.nanoAddress,
-            width: 100,
-            height: 100
-          });
-        } else if (window.QRCode) {
-          new window.QRCode(qrcodeDiv, {
-            text: res.nanoAddress,
-            width: 100,
-            height: 100
-          });
+        const QR = typeof QRCode !== "undefined" ? QRCode : window.QRCode;
+        if (QR) {
+          new QR(qrcodeDiv, { text: address, width: 100, height: 100 });
         }
       } catch (err) {
         console.warn("⚠️ Módulo QR no disponible:", err);
@@ -45,9 +92,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     renderizarHistorial(res.historyTx || []);
+
+    // Consultar saldo si tenemos dirección válida
+    if (address && address.startsWith("nano_")) {
+      obtenerSaldoRPC(address);
+    }
   });
 
-  // 2. Copiar dirección al portapapeles
+  // B. Copiar dirección al portapapeles
   addressText.addEventListener("click", () => {
     if (addressText.innerText.startsWith("nano_")) {
       navigator.clipboard.writeText(addressText.innerText);
@@ -57,12 +109,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 3. Interruptor de Autopago
+  // C. Interruptor Autopago
   autoPayToggle.addEventListener("change", (e) => {
     chrome.storage.local.set({ autoPayEnabled: e.target.checked });
   });
 
-  // 4. Refresco manual de Saldo (1 Petición RPC bajo demanda)
+  // D. Botón Refrescar Saldo
   if (btnRefresh) {
     btnRefresh.addEventListener("click", () => {
       chrome.storage.local.get(["nanoAddress"], (res) => {
@@ -74,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 5. Exportar Semilla / Llave Privada
+  // E. Exportar Semilla
   document.getElementById("btnExport").addEventListener("click", () => {
     chrome.storage.local.get(["nanoSeed"], (res) => {
       if (res.nanoSeed) {
@@ -85,16 +137,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // 6. Importar Semilla (Limpieza completa y re-sincronización)
+  // F. Importar Semilla
   document.getElementById("btnImport").addEventListener("click", () => {
     const nuevaSemilla = prompt("⚠️ ADVERTENCIA: Reemplazará tu billetera actual.\n\nIngresa la nueva Semilla (64 caracteres hex):");
-    
+
     if (nuevaSemilla && /^[0-9a-fA-F]{64}$/.test(nuevaSemilla.trim())) {
-      // Limpiar datos de la billetera anterior
+      const seedLimpia = nuevaSemilla.trim().toUpperCase();
+      const nuevaDireccion = derivarDireccionNano(seedLimpia);
+
+      if (!nuevaDireccion) {
+        alert("❌ Error: No se pudo derivar la dirección con la librería Nano.");
+        return;
+      }
+
       chrome.storage.local.remove(["nanoAddress", "lastBalance", "historyTx"], () => {
-        chrome.storage.local.set({ nanoSeed: nuevaSemilla.trim() }, () => {
-          alert("✅ Semilla importada con éxito. Cierra y vuelve a abrir el popup para sincronizar la nueva dirección.");
-          window.close();
+        chrome.storage.local.set({
+          nanoSeed: seedLimpia,
+          nanoAddress: nuevaDireccion
+        }, () => {
+          alert("✅ Semilla importada y dirección actualizada con éxito:\n" + nuevaDireccion);
+          window.location.reload();
         });
       });
     } else if (nuevaSemilla) {
@@ -102,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Consulta RPC de saldo
+  // G. Consulta RPC de saldo
   function obtenerSaldoRPC(address) {
     fetch(NANO_RPC_ENDPOINT, {
       method: "POST",
@@ -112,10 +174,13 @@ document.addEventListener("DOMContentLoaded", () => {
     .then(res => res.json())
     .then(data => {
       if (data.balance !== undefined) {
-        const balanceXNO = (BigInt(data.balance) / BigInt("1000000000000000000000000000000")).toString();
-        const decimales = (BigInt(data.balance) % BigInt("1000000000000000000000000000000")).toString().padStart(30, "0").slice(0, 6);
-        const saldoFormateado = `${balanceXNO}.${decimales}`;
+        const raw = BigInt(data.balance);
+        const mega = BigInt("1000000000000000000000000000000"); // 10^30
         
+        const entero = (raw / mega).toString();
+        const resto = (raw % mega).toString().padStart(30, "0").slice(0, 6);
+        const saldoFormateado = `${entero}.${resto}`;
+
         balanceText.innerText = `${saldoFormateado} XNO`;
         chrome.storage.local.set({ lastBalance: saldoFormateado });
       }
@@ -126,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Renderizado de lista de transacciones recientes
+  // H. Historial de transacciones
   function renderizarHistorial(lista) {
     if (!lista || lista.length === 0) return;
     historyList.innerHTML = "";
