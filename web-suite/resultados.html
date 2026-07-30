@@ -2,83 +2,206 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Resultados de Búsqueda - Web Limpia</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resultados - Buscador Web Limpia</title>
   <style>
-    body { font-family: system-ui, sans-serif; background: #f8f9fa; padding: 40px; max-width: 800px; margin: 0 auto; }
-    h2 { color: #334155; }
-    .card { background: white; padding: 20px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    .card a { text-decoration: none; color: #0e86d4; font-size: 1.2rem; font-weight: bold; }
-    .card p { color: #64748b; margin: 5px 0 0 0; }
-    .tag { display: inline-block; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; margin-top: 8px; }
+    :root {
+      --primary: #0070f3;
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #10b981;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 2rem;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      flex: 1;
+      max-width: 500px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: var(--card-bg);
+      color: var(--text);
+    }
+
+    .btn-search {
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-index {
+      background: var(--accent);
+      color: #000;
+      text-decoration: none;
+      font-weight: bold;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      white-space: nowrap;
+    }
+
+    .results-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .result-card {
+      background: var(--card-bg);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      border: 1px solid #334155;
+    }
+
+    .result-title {
+      font-size: 1.25rem;
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .result-title:hover {
+      text-decoration: underline;
+    }
+
+    .result-desc {
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    /* Tarjeta CTA de Indexación en Resultados */
+    .cta-card {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--accent);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-top: 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .cta-info h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--accent);
+    }
+
+    .cta-info p {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
-  <h2>Resultados para: <span id="query-term" style="color: #0e86d4;"></span></h2>
-  <div id="results-container"></div>
+
+  <div class="header-bar">
+    <a href="index.html" class="logo">🌐 Web Limpia</a>
+    <form action="resultados.html" method="GET" class="search-box">
+      <input type="text" id="searchInput" name="q" placeholder="Buscar..." required>
+      <button type="submit" class="btn-search">Buscar</button>
+    </form>
+    <a href="constructor.html" class="btn-index">➕ Indexar mi página</a>
+  </div>
+
+  <div class="results-container">
+    <h3 id="queryTitle">Resultados de búsqueda:</h3>
+    
+    <div id="resultsList">
+      </div>
+
+    <div class="cta-card">
+      <div class="cta-info">
+        <h4>¿No encuentras tu sitio web aquí?</h4>
+        <p>Añade los metadatos de micropagos Nano a tu web y regístrala gratis en el indexador.</p>
+      </div>
+      <a href="registrador-creador.html" class="btn-index">⚡ Indexar Sitio Web</a>
+    </div>
+  </div>
 
   <script>
-    // Función auxiliar para quitar acentos/tildes y convertir a minúsculas
-    function limpiarTexto(texto) {
-      return (texto || '')
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
-    }
-
+    // Obtener término de búsqueda de la URL
     const urlParams = new URLSearchParams(window.location.search);
-    const rawQuery = urlParams.get('q') || '';
-    const queryLimpia = limpiarTexto(rawQuery);
+    const query = urlParams.get('q') || '';
+    
+    document.getElementById('searchInput').value = query;
+    document.getElementById('queryTitle').innerText = `Resultados para: "${query}"`;
 
-    document.getElementById('query-term').innerText = rawQuery || "Todos los contenidos";
-
-    // Catálogo de experimentos
-    const experimentos = [
+    // Lista simulada de páginas del ecosistema
+    const dataset = [
       {
-        titulo: "Experimento 1: Reproductor de Video Pay-Per-Click",
-        url: "exp_video.html",
-        descripcion: "Demostración de cobro en Nano (XNO) al iniciar la reproducción de un video.",
-        categoria: "Video / Pay-Per-View"
+        title: "Experimento 1: Video con Cobro por Clic",
+        url: "experimento_video.html",
+        desc: "Prueba la interacción de micropago automático al reproducir o interactuar con contenido en video."
       },
       {
-        titulo: "Experimento 2: Galería Fotográfica con Propinas y Likes",
-        url: "exp_galeria.html",
-        descripcion: "Imágenes de alta calidad con botones para enviar Me Gusta o Propinas directo al creador.",
-        categoria: "Imágenes / Creadores / Galería"
+        title: "Experimento 2: Galería de Fotos (Likes y Propinas)",
+        url: "experimento_galeria.html",
+        desc: "Galería fotográfica interactiva con botones para enviar super-likes o propinas usando Nano."
       },
       {
-        titulo: "Experimento 3: Plataforma de Música por Canción",
-        url: "exp_musica.html",
-        descripcion: "Escucha pistas de audio pagando una microtarifa automática por reproducción.",
-        categoria: "Música / Streaming"
+        title: "Experimento 3: Reproductor de Música (Micro-streaming)",
+        url: "experimento_musica.html",
+        desc: "Escucha canciones con micropago instantáneo al dar play por tiempo de reproducción."
       }
     ];
 
-    const container = document.getElementById('results-container');
-    
-    // Filtrado tolerante a tildes y mayúsculas
-    const filtrados = experimentos.filter(exp => {
-      const tituloLimpio = limpiarTexto(exp.titulo);
-      const descLimpia = limpiarTexto(exp.descripcion);
-      const catLimpia = limpiarTexto(exp.categoria);
+    const resultsList = document.getElementById('resultsList');
+    const filtered = dataset.filter(item => 
+      item.title.toLowerCase().includes(query.toLowerCase()) || 
+      item.desc.toLowerCase().includes(query.toLowerCase())
+    );
 
-      return tituloLimpio.includes(queryLimpia) || 
-             descLimpia.includes(queryLimpia) ||
-             catLimpia.includes(queryLimpia);
-    });
-
-    if (filtrados.length === 0) {
-      container.innerHTML = "<p>No se encontraron experimentos que coincidan con la búsqueda.</p>";
-    } else {
-      filtrados.forEach(exp => {
-        container.innerHTML += `
-          <div class="card">
-            <a href="${exp.url}">${exp.titulo}</a>
-            <p>${exp.descripcion}</p>
-            <span class="tag">${exp.categoria}</span>
+    if (filtered.length > 0) {
+      filtered.forEach(item => {
+        resultsList.innerHTML += `
+          <div class="result-card">
+            <a href="${item.url}" class="result-title">${item.title}</a>
+            <p class="result-desc">${item.desc}</p>
           </div>
         `;
       });
+    } else {
+      resultsList.innerHTML = `<p style="color: var(--text-muted)">No se encontraron contenidos que coincidan con la búsqueda.</p>`;
     }
   </script>
+
 </body>
 </html>
