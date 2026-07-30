@@ -28,7 +28,7 @@
 
 1. Clona este repositorio o descarga el archivo ZIP:
    ```bash
-   git clone [https://github.com/TU_USUARIO/clean-web-mvp.git](https://github.com/TU_USUARIO/clean-web-mvp.git)
+   git clone [https://github.com/kamina2025/clean-web-mvp.git](https://github.com/TU_USUARIO/clean-web-mvp.git)
    ```
 2. Abre tu navegador (Chrome, Opera, Brave o Edge) e ingresa a `chrome://extensions/` o `opera://extensions/`.
 3. Activa el **Modo Desarrollador** (Developer Mode) en la esquina superior derecha.
