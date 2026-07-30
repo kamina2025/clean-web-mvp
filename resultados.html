@@ -104,6 +104,14 @@
       font-size: 0.95rem;
     }
 
+    .result-meta {
+      display: flex;
+      gap: 15px;
+      margin-top: 0.8rem;
+      font-size: 0.85rem;
+      color: var(--accent);
+    }
+
     /* Tarjeta CTA de Indexación en Resultados */
     .cta-card {
       background: linear-gradient(135deg, #1e293b, #0f172a);
@@ -128,6 +136,11 @@
       color: var(--text-muted);
       font-size: 0.9rem;
     }
+
+    .loading-text {
+      color: var(--text-muted);
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -138,69 +151,122 @@
       <input type="text" id="searchInput" name="q" placeholder="Buscar..." required>
       <button type="submit" class="btn-search">Buscar</button>
     </form>
-    <a href="registrador-creador.html" class="btn-index">➕ Indexar mi página</a>
+    <a href="constructor.html" class="btn-index">➕ Indexar mi página</a>
   </div>
 
   <div class="results-container">
     <h3 id="queryTitle">Resultados de búsqueda:</h3>
     
     <div id="resultsList">
-      </div>
+      <p class="loading-text">⌛ Conectando con el indexador de Google Sheets...</p>
+    </div>
 
     <div class="cta-card">
       <div class="cta-info">
         <h4>¿No encuentras tu sitio web aquí?</h4>
         <p>Añade los metadatos de micropagos Nano a tu web y regístrala gratis en el indexador.</p>
       </div>
-      <a href="registrador-creador.html" class="btn-index">⚡ Indexar Sitio Web</a>
+      <a href="constructor.html" class="btn-index">⚡ Indexar Sitio Web</a>
     </div>
   </div>
 
   <script>
-    // Obtener término de búsqueda de la URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('q') || '';
-    
-    document.getElementById('searchInput').value = query;
-    document.getElementById('queryTitle').innerText = `Resultados para: "${query}"`;
+    // ⚠️ REEMPLAZA ESTA URL CON LA URL WEB APP DE TU DESPLIEGUE EN GOOGLE APPS SCRIPT
+    const GOOGLE_SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycby3grmQt_RJ5_jFQcPBkudqAYSlSq6Z4XBQAvuwxt212emBc5TyTYiBKH-d27fqJ9iwfw/exec";
 
-    // Lista simulada de páginas del ecosistema
-    const dataset = [
+    // Experimentos locales predeterminados para asegurar disponibilidad durante demos
+    const localExperiments = [
       {
         title: "Experimento 1: Video con Cobro por Clic",
-        url: "exp_video.html",
-        desc: "Prueba la interacción de micropago automático al reproducir o interactuar con contenido en video."
+        url: "experimento_video.html",
+        desc: "Prueba la interacción de micropago automático al reproducir o interactuar con contenido en video.",
+        category: "Video / Streaming"
       },
       {
         title: "Experimento 2: Galería de Fotos (Likes y Propinas)",
         url: "experimento_galeria.html",
-        desc: "Galería fotográfica interactiva con botones para enviar super-likes o propinas usando Nano."
+        desc: "Galería fotográfica interactiva con botones para enviar super-likes o propinas usando Nano.",
+        category: "Arte / Imágenes"
       },
       {
         title: "Experimento 3: Reproductor de Música (Micro-streaming)",
         url: "experimento_musica.html",
-        desc: "Escucha canciones con micropago instantáneo al dar play por tiempo de reproducción."
+        desc: "Escucha canciones con micropago instantáneo al dar play por tiempo de reproducción.",
+        category: "Música / Audio"
       }
     ];
 
-    const resultsList = document.getElementById('resultsList');
-    const filtered = dataset.filter(item => 
-      item.title.toLowerCase().includes(query.toLowerCase()) || 
-      item.desc.toLowerCase().includes(query.toLowerCase())
-    );
+    // 1. Obtener término de búsqueda de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const query = (urlParams.get('q') || '').trim().toLowerCase();
+    
+    document.getElementById('searchInput').value = query;
+    document.getElementById('queryTitle').innerText = query 
+      ? `Resultados para: "${query}"` 
+      : 'Todos los contenidos indexados:';
 
-    if (filtered.length > 0) {
-      filtered.forEach(item => {
-        resultsList.innerHTML += `
-          <div class="result-card">
-            <a href="${item.url}" class="result-title">${item.title}</a>
-            <p class="result-desc">${item.desc}</p>
-          </div>
-        `;
-      });
-    } else {
-      resultsList.innerHTML = `<p style="color: var(--text-muted)">No se encontraron contenidos que coincidan con la búsqueda.</p>`;
+    const resultsList = document.getElementById('resultsList');
+
+    // 2. Función principal para consultar Google Sheets y renderizar
+    async function loadResults() {
+      let remoteSites = [];
+
+      try {
+        if (GOOGLE_SHEET_ENDPOINT && !GOOGLE_SHEET_ENDPOINT.includes("TU_SCRIPT_ID_AQUI")) {
+          const response = await fetch(GOOGLE_SHEET_ENDPOINT);
+          if (response.ok) {
+            const data = await response.json();
+            // Mapear campos devueltos por Apps Script
+            remoteSites = (Array.isArray(data) ? data : data.sites || []).map(site => ({
+              title: site.title || site.titulo || 'Sin Título',
+              url: site.url_google_site || site.url || '#',
+              desc: site.description || site.categoria || `Categoría: ${site.category || 'General'}`,
+              category: site.category || 'Web Limpia',
+              rate: site.rate_xno || site.rate || null
+            }));
+          }
+        }
+      } catch (error) {
+        console.warn("No se pudo obtener datos en vivo de Google Sheets, mostrando lista local:", error);
+      }
+
+      // Combinar datos locales con los traídos desde la base de datos
+      const dataset = [...remoteSites, ...localExperiments];
+
+      // Filtrar resultados por el término de búsqueda
+      const filtered = dataset.filter(item => 
+        !query || 
+        item.title.toLowerCase().includes(query) || 
+        item.desc.toLowerCase().includes(query) ||
+        (item.category && item.category.toLowerCase().includes(query))
+      );
+
+      // Renderizar tarjetas de resultados
+      resultsList.innerHTML = '';
+
+      if (filtered.length > 0) {
+        filtered.forEach(item => {
+          const metaBadge = item.rate ? `<span>⚡ Tarifa: ${item.rate} XNO</span>` : '';
+          const categoryBadge = item.category ? `<span>📁 ${item.category}</span>` : '';
+
+          resultsList.innerHTML += `
+            <div class="result-card">
+              <a href="${item.url}" class="result-title">${item.title}</a>
+              <p class="result-desc">${item.desc}</p>
+              <div class="result-meta">
+                ${categoryBadge}
+                ${metaBadge}
+              </div>
+            </div>
+          `;
+        });
+      } else {
+        resultsList.innerHTML = `<p style="color: var(--text-muted)">No se encontraron contenidos que coincidan con la búsqueda "${query}".</p>`;
+      }
     }
+
+    // Ejecutar carga al iniciar
+    loadResults();
   </script>
 
 </body>
