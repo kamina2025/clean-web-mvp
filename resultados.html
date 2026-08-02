@@ -3,220 +3,379 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Resultados - Buscador Web Limpia</title>
+  <title>Resultados - Buscador Web Limpia // CLI</title>
   <style>
+    /* PALETA NOVENTERA / RETRO TERMINAL */
     :root {
-      --primary: #0070f3;
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #10b981;
+      --bg: #0d1117;
+      --card-bg: #050a0f;
+      --primary: #00ff66;       /* Verde fósforo terminal */
+      --accent: #ffff55;        /* Amarillo retro */
+      --link-blue: #55ffff;     /* Cyan noventero */
+      --text: #00ff66;
+      --text-muted: #008833;
+      --border: #00ff66;
+      --font-mono: 'Courier New', Courier, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: var(--font-mono);
       background-color: var(--bg);
       color: var(--text);
-      padding: 2rem;
+      padding: 1.5rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
+    /* HEADER SUPERIOR RETRO */
     .header-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
       gap: 15px;
       flex-wrap: wrap;
+      border-bottom: 2px dashed var(--border);
+      padding-bottom: 1rem;
     }
 
     .logo {
-      font-size: 1.5rem;
+      font-size: 1.2rem;
       font-weight: bold;
-      color: var(--text);
+      color: var(--accent);
       text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .logo:hover {
+      background-color: var(--accent);
+      color: #000;
+    }
+
+    /* INDICADOR DE ESTADO EN VIVO */
+    .status-badge {
+      font-size: 0.8rem;
+      padding: 3px 8px;
+      border: 1px solid var(--primary);
+      background: #000;
+      color: var(--accent);
     }
 
     .search-box {
       display: flex;
       gap: 10px;
       flex: 1;
-      max-width: 500px;
+      max-width: 550px;
     }
 
     input[type="text"] {
       flex: 1;
-      padding: 0.75rem;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: var(--card-bg);
-      color: var(--text);
+      padding: 0.6rem;
+      border: 1px solid var(--primary);
+      background: #000;
+      color: var(--primary);
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      box-shadow: 0 0 5px var(--primary);
     }
 
     .btn-search {
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
+      padding: 0.6rem 1rem;
       border: none;
       background: var(--primary);
-      color: white;
+      color: #000;
+      font-family: var(--font-mono);
       font-weight: bold;
       cursor: pointer;
     }
 
-    .btn-index {
+    .btn-search:hover {
       background: var(--accent);
-      color: #000;
-      text-decoration: none;
-      font-weight: bold;
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      white-space: nowrap;
     }
 
+    .btn-index {
+      background: var(--card-bg);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      text-decoration: none;
+      font-weight: bold;
+      padding: 0.6rem 1rem;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      box-shadow: 2px 2px 0px #000;
+    }
+
+    .btn-index:hover {
+      background: var(--accent);
+      color: #000;
+    }
+
+    /* FILTROS RÁPIDOS POR ETIQUETAS */
+    .tag-filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tag-title {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .tag-btn {
+      background: #000;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      font-family: var(--font-mono);
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .tag-btn:hover, .tag-btn.active {
+      background: var(--primary);
+      color: #000;
+      font-weight: bold;
+    }
+
+    /* CONTENEDOR DE RESULTADOS */
     .results-container {
       max-width: 800px;
       margin: 0 auto;
+      width: 100%;
+      flex: 1;
+    }
+
+    .query-header {
+      color: var(--accent);
+      font-size: 1.1rem;
+      margin-bottom: 1.2rem;
+      border-left: 3px solid var(--accent);
+      padding-left: 10px;
     }
 
     .result-card {
       background: var(--card-bg);
-      padding: 1.5rem;
-      border-radius: 12px;
-      margin-bottom: 1rem;
-      border: 1px solid #334155;
+      padding: 1.2rem;
+      margin-bottom: 1.2rem;
+      border: 1px solid var(--border);
+      box-shadow: 4px 4px 0px var(--text-muted);
     }
 
     .result-title {
-      font-size: 1.25rem;
-      color: #38bdf8;
-      text-decoration: none;
+      font-size: 1.15rem;
+      color: var(--link-blue);
+      text-decoration: underline;
       font-weight: bold;
+      display: inline-block;
+      margin-bottom: 0.3rem;
     }
 
     .result-title:hover {
-      text-decoration: underline;
+      color: var(--accent);
+    }
+
+    .result-url {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      word-break: break-all;
     }
 
     .result-desc {
-      color: var(--text-muted);
-      margin-top: 0.5rem;
-      font-size: 0.95rem;
+      color: #cccccc;
+      margin-top: 0.3rem;
+      font-size: 0.9rem;
+      line-height: 1.4;
     }
 
     .result-meta {
       display: flex;
-      gap: 15px;
+      gap: 10px;
       margin-top: 0.8rem;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      border: 1px solid var(--text-muted);
+      padding: 2px 6px;
+      background: #000;
       color: var(--accent);
     }
 
-    /* Tarjeta CTA de Indexación en Resultados */
+    .badge-nano {
+      border: 1px solid var(--link-blue);
+      color: var(--link-blue);
+    }
+
+    /* TARJETA CTA DE INDEXACIÓN */
     .cta-card {
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-      border: 1px solid var(--accent);
-      border-radius: 12px;
-      padding: 1.5rem;
-      margin-top: 2rem;
+      background: var(--card-bg);
+      border: 1px dashed var(--accent);
+      padding: 1.2rem;
+      margin-top: 2.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 20px;
       flex-wrap: wrap;
+      box-shadow: 4px 4px 0px #000;
     }
 
     .cta-info h4 {
-      margin: 0 0 0.5rem 0;
+      margin: 0 0 0.4rem 0;
       color: var(--accent);
+      font-size: 1rem;
     }
 
     .cta-info p {
       margin: 0;
-      color: var(--text-muted);
-      font-size: 0.9rem;
+      color: #aaa;
+      font-size: 0.85rem;
     }
 
     .loading-text {
+      color: var(--accent);
+      font-style: normal;
+      padding: 1rem 0;
+    }
+
+    footer {
+      border-top: 1px dashed var(--border);
+      margin-top: 3rem;
+      padding-top: 1rem;
+      text-align: center;
+      font-size: 0.8rem;
       color: var(--text-muted);
-      font-style: italic;
     }
   </style>
 </head>
 <body>
 
   <div class="header-bar">
-    <a href="index.html" class="logo">🌐 Web Limpia</a>
+    <a href="index.html" class="logo">> WEBLIMPIA // INDEX</a>
+    
+    <div id="statusBadge" class="status-badge">🟢 SYS_STATUS: MEDIENDO PING...</div>
+
     <form action="resultados.html" method="GET" class="search-box">
-      <input type="text" id="searchInput" name="q" placeholder="Buscar..." required>
-      <button type="submit" class="btn-search">Buscar</button>
+      <input type="text" id="searchInput" name="q" placeholder="Buscar sitio web..." required>
+      <button type="submit" class="btn-search">[BUSCAR]</button>
     </form>
-    <a href="registrador-creador.html" class="btn-index">➕ Indexar mi página</a>
+    
+    <a href="registrador-creador.html" class="btn-index">[+] Indexar sitio</a>
   </div>
 
   <div class="results-container">
-    <h3 id="queryTitle">Resultados de búsqueda:</h3>
+    
+    <div class="tag-filters">
+      <span class="tag-title">FILTRAR POR:</span>
+      <button class="tag-btn active" onclick="applyTagFilter('', this)">[TODOS]</button>
+      <button class="tag-btn" onclick="applyTagFilter('video', this)">[VIDEO]</button>
+      <button class="tag-btn" onclick="applyTagFilter('musica', this)">[MÚSICA]</button>
+      <button class="tag-btn" onclick="applyTagFilter('arte', this)">[ARTE / GALERÍA]</button>
+      <button class="tag-btn" onclick="applyTagFilter('nano', this)">[CON TARIFA NANO]</button>
+    </div>
+
+    <div class="query-header" id="queryTitle">> Ejecutando consulta de búsqueda...</div>
     
     <div id="resultsList">
-      <p class="loading-text">⌛ Conectando con el indexador de Google Sheets...</p>
+      <p class="loading-text">> CONNECTING_TO_DATABASE [Google Sheets API]...</p>
     </div>
 
     <div class="cta-card">
       <div class="cta-info">
-        <h4>¿No encuentras tu sitio web aquí?</h4>
+        <h4>¿NO ENCUENTRAS TU SITIO WEB AQUÍ?</h4>
         <p>Añade los metadatos de micropagos Nano a tu web y regístrala gratis en el indexador.</p>
       </div>
-      <a href="registrador-creador.html" class="btn-index">⚡ Indexar Sitio Web</a>
+      <a href="registrador-creador.html" class="btn-index">[⚡ INDEXAR AHORA]</a>
     </div>
   </div>
 
+  <footer>
+    <p>WEBLIMPIA ENGINE // PRIVACIDAD TOTAL // 0 COOKIES</p>
+  </footer>
+
   <script>
-    // ⚠️ REEMPLAZA ESTA URL CON LA URL WEB APP DE TU DESPLIEGUE EN GOOGLE APPS SCRIPT
     const GOOGLE_SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbwVbCiKBCmrfiG-L-kzLvilRY_cW6NeUG4EVDnMI9tRpLujxNWlAXNLDrJW3aXeafniXQ/exec";
 
-    // Experimentos locales predeterminados para asegurar disponibilidad durante demos
+    // Experimentos locales predeterminados
     const localExperiments = [
       {
         title: "Experimento 1: Video con Cobro por Clic",
         url: "./exp-video/exp_video.html",
         desc: "Prueba la interacción de micropago automático al reproducir o interactuar con contenido en video.",
-        category: "Video / Streaming"
+        category: "Video / Streaming",
+        rate: "0.001"
       },
       {
         title: "Experimento 2: Galeria de Fotos (Likes y Propinas)",
         url: "exp_galeria.html",
         desc: "Galería fotográfica interactiva con botones para enviar super-likes o propinas usando Nano.",
-        category: "Arte / Imágenes"
+        category: "Arte / Imágenes",
+        rate: "0.0005"
       },
       {
         title: "Experimento 3: Reproductor de Musica (Micro-streaming)",
         url: "exp_musica.html",
         desc: "Escucha canciones con micropago instantáneo al dar play por tiempo de reproducción.",
-        category: "Música / Audio"
+        category: "Música / Audio",
+        rate: "0.002"
       }
     ];
 
-    // 1. Obtener término de búsqueda de la URL
+    let fullDataset = [];
+    let currentQuery = '';
+    let currentTag = '';
+
+    // 1. Leer parámetros URL
     const urlParams = new URLSearchParams(window.location.search);
-    const query = (urlParams.get('q') || '').trim().toLowerCase();
+    currentQuery = (urlParams.get('q') || '').trim().toLowerCase();
     
-    document.getElementById('searchInput').value = query;
-    document.getElementById('queryTitle').innerText = query 
-      ? `Resultados para: "${query}"` 
-      : 'Todos los contenidos indexados:';
+    document.getElementById('searchInput').value = currentQuery;
+    updateQueryHeader();
 
-    const resultsList = document.getElementById('resultsList');
+    function updateQueryHeader() {
+      const titleElem = document.getElementById('queryTitle');
+      if (currentTag) {
+        titleElem.innerText = `> FILTRANDO POR ETIQUETA: "[${currentTag.toUpperCase()}]"${currentQuery ? ` Y BÚSQUEDA: "${currentQuery}"` : ''}`;
+      } else if (currentQuery) {
+        titleElem.innerText = `> RESULTADOS ENCONTRADOS PARA: "${currentQuery}"`;
+      } else {
+        titleElem.innerText = '> TODOS LOS CONTENIDOS INDEXADOS:';
+      }
+    }
 
-    // 2. Función principal para consultar Google Sheets y renderizar
-    async function loadResults() {
+    // 2. Medir Ping e Indicador de Estado
+    async function measurePingAndFetch() {
+      const statusBadge = document.getElementById('statusBadge');
+      const startTime = performance.now();
       let remoteSites = [];
 
       try {
         if (GOOGLE_SHEET_ENDPOINT && !GOOGLE_SHEET_ENDPOINT.includes("TU_SCRIPT_ID_AQUI")) {
           const response = await fetch(GOOGLE_SHEET_ENDPOINT);
+          const endTime = performance.now();
+          const latency = Math.round(endTime - startTime);
+
           if (response.ok) {
+            statusBadge.innerText = `🟢 ONLINE | ⚡ ${latency}ms`;
+            statusBadge.style.borderColor = "var(--primary)";
+            
             const data = await response.json();
-            // Mapear campos devueltos por Apps Script
             remoteSites = (Array.isArray(data) ? data : data.sites || []).map(site => ({
               title: site.title || site.titulo || 'Sin Título',
               url: site.url_google_site || site.url || '#',
@@ -224,49 +383,85 @@
               category: site.category || 'Web Limpia',
               rate: site.rate_xno || site.rate || null
             }));
+          } else {
+            statusBadge.innerText = `🟡 SERVER_WARN | ⚡ ${latency}ms`;
           }
         }
       } catch (error) {
-        console.warn("No se pudo obtener datos en vivo de Google Sheets, mostrando lista local:", error);
+        console.warn("Error consultando servidor remoto:", error);
+        statusBadge.innerText = `🟠 LOCAL_MODE | ⚡ 0ms`;
       }
 
-      // Combinar datos locales con los traídos desde la base de datos
-      const dataset = [...remoteSites, ...localExperiments];
+      fullDataset = [...remoteSites, ...localExperiments];
+      renderResults();
+    }
 
-      // Filtrar resultados por el término de búsqueda
-      const filtered = dataset.filter(item => 
-        !query || 
-        item.title.toLowerCase().includes(query) || 
-        item.desc.toLowerCase().includes(query) ||
-        (item.category && item.category.toLowerCase().includes(query))
-      );
+    // 3. Filtrar y Renderizar Resultados
+    function renderResults() {
+      const resultsList = document.getElementById('resultsList');
+      
+      const filtered = fullDataset.filter(item => {
+        const matchesQuery = !currentQuery || 
+          item.title.toLowerCase().includes(currentQuery) || 
+          item.desc.toLowerCase().includes(currentQuery) ||
+          (item.category && item.category.toLowerCase().includes(currentQuery));
 
-      // Renderizar tarjetas de resultados
+        let matchesTag = true;
+        if (currentTag === 'nano') {
+          matchesTag = Boolean(item.rate);
+        } else if (currentTag) {
+          matchesTag = item.category && item.category.toLowerCase().includes(currentTag);
+        }
+
+        return matchesQuery && matchesTag;
+      });
+
       resultsList.innerHTML = '';
 
       if (filtered.length > 0) {
         filtered.forEach(item => {
-          const metaBadge = item.rate ? `<span>⚡ Tarifa: ${item.rate} XNO</span>` : '';
-          const categoryBadge = item.category ? `<span>📁 ${item.category}</span>` : '';
+          const metaBadge = item.rate ? `<span class="badge badge-nano">⚡ AUTO-PAY: ${item.rate} XNO</span>` : '';
+          const categoryBadge = item.category ? `<span class="badge">📁 ${item.category}</span>` : '';
 
           resultsList.innerHTML += `
             <div class="result-card">
               <a href="${item.url}" class="result-title">${item.title}</a>
+              <div class="result-url">${item.url}</div>
               <p class="result-desc">${item.desc}</p>
               <div class="result-meta">
                 ${categoryBadge}
                 ${metaBadge}
+                <span class="badge">🛡️ TRACKERS: 0</span>
               </div>
             </div>
           `;
         });
       } else {
-        resultsList.innerHTML = `<p style="color: var(--text-muted)">No se encontraron contenidos que coincidan con la búsqueda "${query}".</p>`;
+        resultsList.innerHTML = `
+          <div class="result-card" style="border-color: var(--accent);">
+            <p style="color: var(--accent)">> ERROR 404: NO_RESULTS_FOUND</p>
+            <p style="color: #ccc; font-size: 0.85rem; margin-top: 5px;">
+              No se encontraron contenidos que coincidan con la selección actual.
+            </p>
+          </div>
+        `;
       }
     }
 
-    // Ejecutar carga al iniciar
-    loadResults();
+    // 4. Controlador de clics en las etiquetas
+    function applyTagFilter(tag, btnElem) {
+      currentTag = tag;
+      
+      // Actualizar botones activos
+      document.querySelectorAll('.tag-btn').forEach(btn => btn.classList.remove('active'));
+      if (btnElem) btnElem.classList.add('active');
+
+      updateQueryHeader();
+      renderResults();
+    }
+
+    // Iniciar carga al abrir
+    measurePingAndFetch();
   </script>
 
 </body>

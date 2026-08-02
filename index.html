@@ -1,166 +1,412 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Buscador Web Limpia</title>
-  <style>
-    :root {
-      --primary: #0070f3;
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #10b981;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Buscador Web Limpia // CLI Edition</title>
+    <style>
+      /* PALETA NOVENTERA / RETRO TERMINAL */
+      :root {
+        --bg: #0d1117;
+        --card-bg: #050a0f;
+        --primary: #00ff66;       /* Verde fósforo terminal */
+        --accent: #ffff55;        /* Amarillo retro */
+        --link-blue: #55ffff;     /* Cyan noventero */
+        --text: #00ff66;
+        --text-muted: #008833;
+        --border: #00ff66;
+        --font-mono: 'Courier New', Courier, monospace;
+      }
 
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
+      * {
+        box-sizing: border-box;
+      }
 
-    header {
-      display: flex;
-      justify-content: flex-end;
-      padding: 1rem 2rem;
-    }
+      body {
+        margin: 0;
+        font-family: var(--font-mono);
+        background-color: var(--bg);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
 
-    .nav-btn {
-      background: transparent;
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: all 0.2s;
-    }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        border-bottom: 2px dashed var(--border);
+      }
 
-    .nav-btn:hover {
-      background: var(--accent);
-      color: #000;
-    }
+      .sys-status {
+        font-size: 0.85rem;
+        color: var(--accent);
+      }
 
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
-      text-align: center;
-    }
+      .nav-btn {
+        background: var(--card-bg);
+        border: 1px solid var(--primary);
+        color: var(--primary);
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        font-weight: bold;
+        transition: all 0.2s;
+        box-shadow: 3px 3px 0px var(--text-muted);
+      }
 
-    .logo {
-      font-size: 2.5rem;
-      font-weight: 800;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(90deg, #38bdf8, #a855f7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+      .nav-btn:hover {
+        background: var(--primary);
+        color: #000;
+        box-shadow: 1px 1px 0px var(--text-muted);
+      }
 
-    .subtitle {
-      color: var(--text-muted);
-      margin-bottom: 2rem;
-    }
+      main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        text-align: center;
+        max-width: 800px;
+        margin: 0 auto;
+        width: 100%;
+      }
 
-    .search-box {
-      display: flex;
-      gap: 10px;
-      width: 100%;
-      max-width: 600px;
-    }
+      .logo {
+        font-size: 2.2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 0px #000;
+      }
 
-    input[type="text"] {
-      flex: 1;
-      padding: 1rem;
-      border-radius: 12px;
-      border: 1px solid #334155;
-      background: var(--card-bg);
-      color: var(--text);
-      font-size: 1rem;
-      outline: none;
-    }
+      .subtitle {
+        color: var(--primary);
+        margin-bottom: 2rem;
+        font-size: 0.95rem;
+      }
 
-    input[type="text"]:focus {
-      border-color: var(--primary);
-    }
+      .search-box {
+        display: flex;
+        gap: 10px;
+        width: 100%;
+        max-width: 650px;
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        padding: 1rem;
+        box-shadow: 4px 4px 0px var(--text-muted);
+        flex-wrap: wrap;
+      }
 
-    button.btn-search {
-      padding: 1rem 1.5rem;
-      border-radius: 12px;
-      border: none;
-      background: var(--primary);
-      color: white;
-      font-weight: bold;
-      font-size: 1rem;
-      cursor: pointer;
-    }
+      .prompt-line {
+        width: 100%;
+        text-align: left;
+        font-size: 0.85rem;
+        color: var(--accent);
+        margin-bottom: 0.25rem;
+      }
 
-    /* Banner CTA Creadores */
-    .creator-banner {
-      margin-top: 3rem;
-      background: var(--card-bg);
-      border: 1px dashed var(--accent);
-      border-radius: 16px;
-      padding: 1.5rem 2rem;
-      max-width: 550px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
+      input[type="text"] {
+        flex: 1;
+        padding: 0.75rem;
+        border: 1px solid var(--primary);
+        background: #000;
+        color: var(--primary);
+        font-family: var(--font-mono);
+        font-size: 1rem;
+        outline: none;
+      }
 
-    .creator-banner p {
-      margin: 0;
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      line-height: 1.4;
-    }
+      input[type="text"]:focus {
+        box-shadow: 0 0 5px var(--primary);
+      }
 
-    .btn-cta {
-      background: var(--accent);
-      color: #000;
-      text-decoration: none;
-      font-weight: bold;
-      padding: 0.75rem 1.5rem;
-      border-radius: 8px;
-      display: inline-block;
-      transition: transform 0.2s;
-    }
+      button.btn-search {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        background: var(--primary);
+        color: #000;
+        font-family: var(--font-mono);
+        font-weight: bold;
+        font-size: 1rem;
+        cursor: pointer;
+      }
 
-    .btn-cta:hover {
-      transform: translateY(-2px);
-    }
-  </style>
-</head>
-<body>
+      button.btn-search:hover {
+        background: var(--accent);
+      }
 
-  <header>
-    <a href="registrador-creador.html" class="nav-btn">⚡ Publicar Sitio</a>
-  </header>
+      /* BANNER CTA CREADORES (RETRO STYLE) */
+      .creator-banner {
+        margin-top: 2.5rem;
+        background: var(--card-bg);
+        border: 1px dashed var(--accent);
+        padding: 1.5rem;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 4px 4px 0px #000;
+      }
 
-  <main>
-    <div class="logo">Web Limpia Search</div>
-    <p class="subtitle">Navegación ética, privada y sin publicidad invasiva</p>
+      .creator-banner h3 {
+        margin: 0;
+        color: var(--accent);
+        font-size: 1.1rem;
+      }
 
-    <form action="resultados.html" method="GET" class="search-box">
-      <input type="text" name="q" placeholder="Prueba buscando musica, video o galeria" required>
-      <button type="submit" class="btn-search">Buscar</button>
-    </form>
+      .creator-banner p {
+        margin: 0;
+        color: #ccc;
+        font-size: 0.88rem;
+        line-height: 1.4;
+      }
 
-    <div class="creator-banner">
-      <h3>🚀 ¿Tienes un sitio web o creas contenido?</h3>
-      <p>Monetiza de forma directa con micropagos en Nano (XNO) sin anuncios ni rastreo. Genera tu manifiesto e indexa tu página en minutos.</p>
-      <a href="registrador-creador.html" class="btn-cta">➕ Indexar mi página ahora</a>
-    </div>
-  </main>
+      .btn-cta {
+        background: var(--accent);
+        color: #000;
+        text-decoration: none;
+        font-weight: bold;
+        padding: 0.6rem 1.2rem;
+        border: 1px solid var(--accent);
+        display: inline-block;
+        box-shadow: 2px 2px 0px #000;
+      }
 
-</body>
+      .btn-cta:hover {
+        background: var(--primary);
+        border-color: var(--primary);
+      }
+
+      /* BOTÓN DONACIÓN NANO RETRO */
+      .btn-donate {
+        margin-top: 1.5rem;
+        background: #000;
+        color: var(--link-blue);
+        border: 1px solid var(--link-blue);
+        padding: 0.75rem 1.25rem;
+        font-family: var(--font-mono);
+        font-weight: bold;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 3px 3px 0px var(--link-blue);
+      }
+
+      .btn-donate:hover {
+        background: var(--link-blue);
+        color: #000;
+      }
+
+      /* MODAL RETRO */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      .modal-content {
+        background: var(--card-bg);
+        border: 2px solid var(--primary);
+        padding: 20px;
+        max-width: 340px;
+        width: 90%;
+        text-align: center;
+        position: relative;
+        box-shadow: 6px 6px 0px var(--text-muted);
+      }
+
+      .close-modal {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        font-size: 1rem;
+        cursor: pointer;
+        padding: 0 5px;
+      }
+
+      .close-modal:hover {
+        background: var(--accent);
+        color: #000;
+      }
+
+      /* FOOTER / CREDITS */
+      .credits {
+        margin-top: 3rem;
+        border-top: 1px dashed var(--text-muted);
+        padding-top: 1rem;
+        width: 100%;
+      }
+
+      .credits h4 {
+        margin: 0 0 5px 0;
+        color: var(--accent);
+        font-size: 0.9rem;
+      }
+
+      .credits h6 {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        font-weight: normal;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="sys-status">> SYS_NODE: ONLINE</div>
+      <a href="registrador-creador.html" class="nav-btn">[+] PUBLICAR SITIO</a>
+    </header>
+
+    <main>
+      <div class="logo">WEB LIMPIA // SEARCH</div>
+      <p class="subtitle">> Navegación ética, privada y sin publicidad invasiva_</p>
+
+      <form action="resultados.html" method="GET" class="search-box">
+        <div class="prompt-line">root@weblimpia:~# query --search</div>
+        <input type="text" name="q" placeholder="Prueba buscando musica, video o galeria..." required />
+        <button type="submit" class="btn-search">[BUSCAR]</button>
+      </form>
+
+      <div class="creator-banner">
+        <h3>🚀 ¿TIENES UN SITIO WEB O CREAS CONTENIDO?</h3>
+        <p>
+          Monetiza de forma directa con micropagos en Nano (XNO) sin anuncios ni rastreo. Genera tu manifiesto e indexa
+          tu página en minutos.
+        </p>
+        <a href="registrador-creador.html" class="btn-cta">[+] Indexar mi página ahora</a>
+      </div>
+
+      <button class="btn-donate" onclick="toggleModal(true)">
+        <span>⚡ Apoyar el proyecto con Nano ($XNO)</span>
+      </button>
+
+      <div class="modal-overlay" id="donate-modal">
+        <div class="modal-content">
+          <button class="close-modal" onclick="toggleModal(false)">[X]</button>
+          <h3 style="color: var(--accent); margin-top:0;">DONAR CON NANO</h3>
+          <p style="font-size: 0.85rem; color: var(--primary); margin-bottom: 10px;">Sin comisiones e instantáneo.</p>
+          
+          <img 
+            src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=nano:nano_1xea9hmoj4yhdmphu3pc6s7kyot6x63fo5emb8s9dq819c7iotugwq866rru" 
+            alt="QR Nano" 
+            style="margin: 10px 0; border: 1px solid var(--primary); padding: 5px; background: #fff;"
+          />
+
+          <input 
+            type="text" 
+            readonly 
+            value="nano_1xea9hmoj4yhdmphu3pc6s7kyot6x63fo5emb8s9dq819c7iotugwq866rru" 
+            style="width: 100%; font-size: 0.65rem; padding: 6px; text-align: center; background: #000; color: var(--primary); border: 1px solid var(--primary); margin-bottom: 10px;"
+          />
+          
+          <button 
+            onclick="navigator.clipboard.writeText('nano_1xea9hmoj4yhdmphu3pc6s7kyot6x63fo5emb8s9dq819c7iotugwq866rru'); alert('¡Dirección copiada!');" 
+            style="padding: 8px 12px; cursor: pointer; border: none; background-color: var(--accent); color: black; font-weight: bold; font-family: var(--font-mono); width: 100%;"
+          >
+            [COPIAR DIRECCIÓN]
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="donation-alert"
+        style="display: none; padding: 15px; background: #000; color: var(--accent); border: 2px solid var(--accent); box-shadow: 4px 4px 0px var(--primary); margin-top: 15px; font-weight: bold;">
+        ⚡ ¡DONACIÓN RECIBIDA! <span id="donation-amount"></span> NANO ⚡
+      </div>
+
+      <div class="credits">
+        <h4>Creado por Kamina Katsuragi</h4>
+        <h6>Contacto: kaminacripto@proton.me</h6>
+      </div>
+
+      <script>
+        const NANO_ADDRESS = "nano_1xea9hmoj4yhdmphu3pc6s7kyot6x63fo5emb8s9dq819c7iotugwq866rru";
+        const WS_URL = "wss://nodes.nanswap.com/ws";
+
+        // Control del Modal
+        function toggleModal(show) {
+          document.getElementById('donate-modal').style.display = show ? 'flex' : 'none';
+        }
+
+        // Lógica WebSocket
+        function connectWebSocket() {
+          const ws = new WebSocket(WS_URL);
+
+          ws.onopen = () => {
+            console.log("Conectado a la red Nano via WebSocket");
+            const subscribeMessage = {
+              action: "subscribe",
+              topic: "confirmation",
+              options: {
+                accounts: [NANO_ADDRESS]
+              }
+            };
+            ws.send(JSON.stringify(subscribeMessage));
+          };
+
+          ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.topic === "confirmation" && data.message) {
+              const block = data.message.block;
+
+              if (block.link_as_account === NANO_ADDRESS) {
+                const amountRaw = BigInt(data.message.amount);
+                const amountNano = Number(amountRaw) / 1e30;
+
+                mostrarAlertaDonacion(amountNano, data.message.hash);
+              }
+            }
+          };
+
+          ws.onclose = () => {
+            console.log("Conexión cerrada. Reintentando en 3 segundos...");
+            setTimeout(connectWebSocket, 3000);
+          };
+
+          ws.onerror = (error) => {
+            console.error("Error en WebSocket Nano:", error);
+            ws.close();
+          };
+        }
+
+        function mostrarAlertaDonacion(monto, hash) {
+          const alertBox = document.getElementById("donation-alert");
+          const amountSpan = document.getElementById("donation-amount");
+
+          amountSpan.innerText = monto.toFixed(6);
+          alertBox.style.display = "block";
+
+          // Cerrar modal si estaba abierto al recibir la donación
+          toggleModal(false);
+
+          console.log(`Donación confirmada: ${monto} NANO | Hash: ${hash}`);
+
+          setTimeout(() => {
+            alertBox.style.display = "none";
+          }, 8000);
+        }
+
+        connectWebSocket();
+      </script>
+    </main>
+  </body>
 </html>
