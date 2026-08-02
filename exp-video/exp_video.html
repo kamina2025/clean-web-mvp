@@ -254,30 +254,47 @@ const TORRENT_MAGNET = "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d56609
     });
 
     // --- 4. LÓGICA DE WEBTORRENT (Se ejecuta solo al pagar) ---
-    function iniciarWebTorrent() {
-      // Ocultar la pantalla de cobro para revelar el reproductor
-      videoOverlay.style.opacity = "0";
-      setTimeout(() => videoOverlay.style.display = "none", 300);
+    let torrentCliente = null;
 
-      nanoTxStatus.innerText += " (Cargando P2P...)";
+function iniciarWebTorrent() {
+    // 1. Si ya existía un cliente o torrent corriendo, cancelarlo para evitar duplicar 'pipes'
+    if (torrentCliente) {
+        try { torrentCliente.destroy(); } catch(e){}
+    }
 
-      // Descargar/Transmitir el Torrent en el reproductor HTML5
-      torrentClient.add(TORRENT_MAGNET, (torrent) => {
-        // Buscar el archivo de video mp4 o webm dentro del Torrent
-        const file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.webm'));
+    torrentCliente = new WebTorrent();
+
+    console.log("Conectando a la red P2P WebTorrent...");
+
+    torrentCliente.add(TORRENT_MAGNET, function (torrent) {
+        // Buscar el archivo de video dentro del torrent (mp4, webm, etc.)
+        const file = torrent.files.find(function (f) {
+            return f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv');
+        });
 
         if (file) {
-          // Renderizar directamente en la etiqueta <video>
-          file.renderTo(videoPlayer, { autoplay: true });
-        }
+            console.log("Archivo de video encontrado:", file.name);
 
-        // Actualizar métricas de la red P2P en tiempo real en la UI
-        torrent.on('download', () => {
-          peerCount.innerText = `${torrent.numPeers} Pares (Peers)`;
-          downloadSpeed.innerText = `${(torrent.downloadSpeed / 1024).toFixed(1)} KB/s`;
-        });
-      });
-    }
+            // Obtener el elemento video HTML
+            const videoElement = document.getElementById('videoPlayer'); // Cambia por la ID de tu <video>
+
+            // 2. Usar renderTo de forma limpia (evita llamar renderTo dos veces)
+            file.renderTo(videoElement, {
+                autoplay: true,
+                controls: true
+            }, function (err, elem) {
+                if (err) {
+                    console.error("Error al renderizar el video:", err);
+                } else {
+                    console.log("Reproducción P2P iniciada con éxito");
+                }
+            });
+
+        } else {
+            console.error("No se encontró ningún archivo de video en este torrent.");
+        }
+    });
+}
   </script>
 </body>
 </html>
