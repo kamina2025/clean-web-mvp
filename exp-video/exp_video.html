@@ -3,24 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Experimento: Video P2P + Micropago Nano</title>
+  <title>Experimento 1: Video WebTorrent Pay-Per-View</title>
 
-  <meta name="cleanweb:address" content="nano_19dppxbmzraheooi888n9i9mrks9y5xgop1cg83p3engz3nisfdqj8urma86">
-  <meta name="cleanweb:rate" content="0.0002">
-  <meta name="cleanweb:time" content="0"> <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
 
   <style>
     :root {
       --bg: #0f172a;
       --card-bg: #1e293b;
-      --accent: #0ea5e9;
+      --accent: #10b981; /* Verde esmeralda alineado a tu diseño */
       --nano-green: #4cb963;
       --text: #f8fafc;
       --subtext: #94a3b8;
     }
 
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: system-ui, -apple-system, sans-serif;
       background-color: var(--bg);
       color: var(--text);
       margin: 0;
@@ -40,7 +38,7 @@
     }
 
     .header-nav a {
-      color: var(--accent);
+      color: #38bdf8;
       text-decoration: none;
       font-weight: bold;
     }
@@ -52,6 +50,7 @@
       border-radius: 12px;
       padding: 24px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      text-align: center;
     }
 
     .player-wrapper {
@@ -64,6 +63,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      margin-top: 20px;
     }
 
     video {
@@ -83,27 +83,28 @@
       padding: 20px;
       text-align: center;
       transition: opacity 0.3s ease;
+      z-index: 10;
     }
 
     .btn-play {
-      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      background: var(--accent);
       color: #fff;
       border: none;
-      padding: 16px 32px;
+      padding: 14px 28px;
       font-size: 1.1rem;
       font-weight: bold;
-      border-radius: 50px;
+      border-radius: 6px;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 10px;
-      box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
       transition: transform 0.2s, background 0.2s;
     }
 
     .btn-play:hover {
       transform: scale(1.05);
-      background: linear-gradient(135deg, #0284c7, #0369a1);
+      background: #059669;
     }
 
     .status-panel {
@@ -111,6 +112,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 12px;
+      text-align: left;
     }
 
     .status-card {
@@ -118,7 +120,7 @@
       padding: 12px;
       border-radius: 8px;
       font-size: 0.9rem;
-      border-left: 4px solid var(--accent);
+      border-left: 4px solid #38bdf8;
     }
 
     .status-card.nano {
@@ -133,7 +135,7 @@
     }
 
     .status-card strong {
-      font-size: 1rem;
+      font-size: 0.95rem;
       word-break: break-all;
     }
 
@@ -160,21 +162,18 @@
   </div>
 
   <div class="container">
-    <h2>🎥 Experimento: Reproductor P2P (WebTorrent + Nano)</h2>
+    <h1 style="margin-top: 0;">🎬 Video P2P Pay-Per-View</h1>
     <p style="color: var(--subtext);">
-      El archivo se transmite directamente desde la red P2P (WebTorrent). Al hacer clic en reproducir, la <strong>Batería de Navegación</strong> ejecutará un micropago instantáneo en Nano.
+      Costo por reproducción: <strong>0.0001 XNO</strong><br>
+      <small>(El video se descargará directamente desde pares WebTorrent una vez confirmado el pago)</small>
     </p>
 
     <div class="player-wrapper">
-      <video id="videoPlayer" controls></video>
+      <video id="videoPlayer" controls poster="https://via.placeholder.com/640x360/1e293b/ffffff?text=Video+P2P+Protegido"></video>
 
       <div class="overlay" id="videoOverlay">
-        <h3 style="margin-bottom: 8px;">Desbloquear Video en Streaming</h3>
-        <p style="color: var(--subtext); margin-bottom: 20px; max-width: 400px;">
-          Tarifa de Reproducción: <strong>0.0002 XNO</strong> ($0.00 comisión)
-        </p>
-        <button class="btn-play" id="btnPlay">
-          ▶️ Pagar y Reproducir con Nano
+        <button class="btn-play" id="btnPlay" onclick="solicitarPagoVideo()">
+          ▶️ Desbloquear / Reproducir (0.0001 XNO)
         </button>
       </div>
     </div>
@@ -182,7 +181,7 @@
     <div class="status-panel">
       <div class="status-card nano">
         <span>ESTADO MICROPAGO NANO</span>
-        <strong id="nanoTxStatus">Esperando Confirmación...</strong>
+        <strong id="nanoTxStatus" style="color: #38bdf8;">Esperando acción...</strong>
       </div>
       <div class="status-card">
         <span>RED WEBTORRENT (PEERS)</span>
@@ -197,13 +196,13 @@
 
   <script>
     // --- 1. CONFIGURACIÓN DEL EXPERIMENTO ---
-    const NANO_ADDRESS = "nano_19dppxbmzraheooi888n9i9mrks9y5xgop1cg83p3engz3nisfdqj8urma86";
-    const NANO_RATE = "0.0002";
+    const CREADOR_NANO = "nano_1r9hnf3zagcruh4k8gfp8izf1c67f3codi1xsxiochokg9xdstfrm6nc4o6d";
+    const PRECIO_VIDEO = 0.0001;
     
-    // Magnet URI de prueba pública (Video Open Source: Sintel de Blender Foundation)
-    // También se puede reemplazar por un archivo .torrent propio
+    // Magnet URI de prueba pública para WebTorrent
     const TORRENT_MAGNET = "magnet:?xs=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel.torrent&dn=Sintel";
 
+    // Elementos del DOM
     const btnPlay = document.getElementById('btnPlay');
     const videoOverlay = document.getElementById('videoOverlay');
     const videoPlayer = document.getElementById('videoPlayer');
@@ -215,51 +214,56 @@
     // Inicializar cliente WebTorrent
     const torrentClient = new WebTorrent();
 
-    // --- 2. CONEXIÓN CON LA BATERÍA DE NAVEGACIÓN (EXTENSIÓN) ---
-    btnPlay.addEventListener('click', () => {
-      // Modificar la interfaz visual de inmediato
+    // --- 2. SOLICITUD DE PAGO A LA EXTENSIÓN (Tu lógica) ---
+    function solicitarPagoVideo() {
       btnPlay.disabled = true;
-      btnPlay.innerText = "⚡ Procesando Micropago Nano...";
-      nanoTxStatus.innerText = "⏳ Disparando Batería Nano...";
+      btnPlay.innerText = "⚡ Procesando...";
+      nanoTxStatus.innerText = "⏳ Emitiendo transacción a la red Nano...";
+      nanoTxStatus.style.color = "#facc15"; // Amarillo de espera
 
-      // Enviar evento postMessage para que content_script.js de la extensión capture el cobro
+      // Mensaje exacto que espera tu content_script.js
       window.postMessage({
-        type: "CLEANWEB_PAYMENT_TRIGGER",
-        address: NANO_ADDRESS,
-        amount: NANO_RATE,
-        reason: "Reproducción Video WebTorrent"
+        type: "CLEANWEB_MICROPAGO_TRIGGER",
+        direccionDestino: CREADOR_NANO,
+        montoXNO: PRECIO_VIDEO,
+        concepto: "Pay-Per-View Video P2P"
       }, "*");
+    }
 
-      // Iniciar la carga del video P2P
-      iniciarWebTorrent();
-    });
-
-    // Escuchar respuesta/confirmación de la extensión (opcional)
+    // --- 3. RESPUESTA DE LA EXTENSIÓN Y DESBLOQUEO ---
     window.addEventListener("message", (event) => {
-      if (event.data && event.data.type === "CLEANWEB_PAYMENT_CONFIRMED") {
-        nanoTxStatus.innerText = "✅ Micropago Confirmado (~0.3s)";
-        nanoTxStatus.style.color = "var(--nano-green)";
-        payStatus.innerText = "🔓 Contenido Desbloqueado";
-        payStatus.classList.add("active");
+      // Escuchar el evento exacto de respuesta de tu extensión
+      if (event.data && event.data.type === "CLEANWEB_PAGO_RESPUESTA") {
+        if (event.data.exito) {
+          // PAGO EXITOSO: Actualizar UI
+          nanoTxStatus.innerText = `✅ Hash: ${event.data.hash.substring(0, 10)}...`;
+          nanoTxStatus.style.color = "var(--nano-green)";
+          payStatus.innerText = "🔓 Contenido Desbloqueado";
+          payStatus.classList.add("active");
+
+          // Iniciar WebTorrent
+          iniciarWebTorrent();
+        } else {
+          // ERROR EN EL PAGO
+          nanoTxStatus.innerText = `❌ Error: ${event.data.error || 'Saldo insuficiente'}`;
+          nanoTxStatus.style.color = "#ef4444"; // Rojo
+          btnPlay.disabled = false;
+          btnPlay.innerText = "▶️ Reintentar Pago";
+        }
       }
     });
 
-    // --- 3. LÓGICA DE WEBTORRENT ---
+    // --- 4. LÓGICA DE WEBTORRENT (Se ejecuta solo al pagar) ---
     function iniciarWebTorrent() {
-      // Ocultar la pantalla de cobro
+      // Ocultar la pantalla de cobro para revelar el reproductor
       videoOverlay.style.opacity = "0";
       setTimeout(() => videoOverlay.style.display = "none", 300);
 
-      // Si no llegó la confirmación de la extensión por mensaje explícito, marcar estado local de demo
-      if (payStatus.innerText !== "🔓 Contenido Desbloqueado") {
-        nanoTxStatus.innerText = "⚡ Micropago Enviado a la Red";
-        payStatus.innerText = "🔓 Transmitiendo P2P";
-        payStatus.classList.add("active");
-      }
+      nanoTxStatus.innerText += " (Cargando P2P...)";
 
       // Descargar/Transmitir el Torrent en el reproductor HTML5
       torrentClient.add(TORRENT_MAGNET, (torrent) => {
-        // Buscar el archivo de video dentro del Torrent
+        // Buscar el archivo de video mp4 o webm dentro del Torrent
         const file = torrent.files.find(f => f.name.endsWith('.mp4') || f.name.endsWith('.webm'));
 
         if (file) {
@@ -267,7 +271,7 @@
           file.renderTo(videoPlayer, { autoplay: true });
         }
 
-        // Actualizar métricas de la red P2P en tiempo real
+        // Actualizar métricas de la red P2P en tiempo real en la UI
         torrent.on('download', () => {
           peerCount.innerText = `${torrent.numPeers} Pares (Peers)`;
           downloadSpeed.innerText = `${(torrent.downloadSpeed / 1024).toFixed(1)} KB/s`;
