@@ -38,7 +38,7 @@
 ### 2. Ejecutar la Suite Web de Pruebas
 
 1. Abre el archivo `web-suite/index.html` en tu navegador para interactuar con el buscador.
-2. Ingresa a `experimento_video.html`, `experimento_galeria.html` o `experimento_musica.html` para probar las demostraciones de micropagos en tiempo real.
+2. Ingresa a `exp.html`, `exp_galeria.html` o `exp_musica.html` para probar las demostraciones de micropagos en tiempo real.
 
 ---
 
