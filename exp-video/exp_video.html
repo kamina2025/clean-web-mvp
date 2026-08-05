@@ -11,7 +11,7 @@
     :root {
       --bg: #0f172a;
       --card-bg: #1e293b;
-      --accent: #10b981; /* Verde esmeralda alineado a tu diseño */
+      --accent: #10b981;
       --nano-green: #4cb963;
       --text: #f8fafc;
       --subtext: #94a3b8;
@@ -168,12 +168,12 @@
       <small>(El video se descargará directamente desde pares WebTorrent una vez confirmado el pago)</small>
     </p>
 
-    <div class="player-wrapper">
-      <video id="videoPlayer" controls poster="https://via.placeholder.com/640x360/1e293b/ffffff?text=Video+P2P+Protegido"></video>
-
+    <div class="player-wrapper" id="videoContainer">
+      <video id="videoPlayer" controls playsinline></video>
+      
       <div class="overlay" id="videoOverlay">
         <button class="btn-play" id="btnPlay" onclick="solicitarPagoVideo()">
-          ▶️ Desbloquear / Reproducir (0.0001 XNO)
+          ▶️ Desbloquear / Reproducir (0.00001 XNO)
         </button>
       </div>
     </div>
@@ -197,11 +197,11 @@
   <script>
     // --- 1. CONFIGURACIÓN DEL EXPERIMENTO ---
     const CREADOR_NANO = "nano_19dppxbmzraheooi888n9i9mrks9y5xgop1cg83p3engz3nisfdqj8urma86";
-    const PRECIO_VIDEO = 0.0001;
+    const PRECIO_VIDEO = 0.00001;
     
-    // Magnet URI de prueba pública para WebTorrent
-// Magnet URI oficial completo de Sintel:
-const TORRENT_MAGNET = "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=Sintel&tr=udp%3A%2F%2Fexplodie.org%3A6969&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969&tr=udp%3A%2F%2Fzer0day.ch%3A1337&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com";
+    // Magnet URI oficial de Sintel
+    const TORRENT_MAGNET = "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=Sintel";
+    
     // Elementos del DOM
     const btnPlay = document.getElementById('btnPlay');
     const videoOverlay = document.getElementById('videoOverlay');
@@ -211,17 +211,15 @@ const TORRENT_MAGNET = "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d56609
     const peerCount = document.getElementById('peerCount');
     const downloadSpeed = document.getElementById('downloadSpeed');
 
-    // Inicializar cliente WebTorrent
-    const torrentClient = new WebTorrent();
+    let torrentCliente = null;
 
-    // --- 2. SOLICITUD DE PAGO A LA EXTENSIÓN (Tu lógica) ---
+    // --- 2. SOLICITUD DE PAGO A LA EXTENSIÓN ---
     function solicitarPagoVideo() {
       btnPlay.disabled = true;
       btnPlay.innerText = "⚡ Procesando...";
       nanoTxStatus.innerText = "⏳ Emitiendo transacción a la red Nano...";
-      nanoTxStatus.style.color = "#facc15"; // Amarillo de espera
+      nanoTxStatus.style.color = "#facc15";
 
-      // Mensaje exacto que espera tu content_script.js
       window.postMessage({
         type: "CLEANWEB_MICROPAGO_TRIGGER",
         direccionDestino: CREADOR_NANO,
@@ -232,69 +230,101 @@ const TORRENT_MAGNET = "magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d56609
 
     // --- 3. RESPUESTA DE LA EXTENSIÓN Y DESBLOQUEO ---
     window.addEventListener("message", (event) => {
-      // Escuchar el evento exacto de respuesta de tu extensión
       if (event.data && event.data.type === "CLEANWEB_PAGO_RESPUESTA") {
         if (event.data.exito) {
-          // PAGO EXITOSO: Actualizar UI
           nanoTxStatus.innerText = `✅ Hash: ${event.data.hash.substring(0, 10)}...`;
           nanoTxStatus.style.color = "var(--nano-green)";
           payStatus.innerText = "🔓 Contenido Desbloqueado";
           payStatus.classList.add("active");
-
-          // Iniciar WebTorrent
+          
+          videoOverlay.style.display = "none";
           iniciarWebTorrent();
         } else {
-          // ERROR EN EL PAGO
           nanoTxStatus.innerText = `❌ Error: ${event.data.error || 'Saldo insuficiente'}`;
-          nanoTxStatus.style.color = "#ef4444"; // Rojo
+          nanoTxStatus.style.color = "#ef4444";
           btnPlay.disabled = false;
           btnPlay.innerText = "▶️ Reintentar Pago";
         }
       }
     });
 
-    // --- 4. LÓGICA DE WEBTORRENT (Se ejecuta solo al pagar) ---
-    let torrentCliente = null;
-
-function iniciarWebTorrent() {
-    // 1. Si ya existía un cliente o torrent corriendo, cancelarlo para evitar duplicar 'pipes'
-    if (torrentCliente) {
+    // --- 4. LÓGICA DE WEBTORRENT (Con control de AutoPlay Avanzado) ---
+    function iniciarWebTorrent() {
+      if (torrentCliente) {
         try { torrentCliente.destroy(); } catch(e){}
-    }
+      }
 
-    torrentCliente = new WebTorrent();
+      torrentCliente = new WebTorrent();
+      console.log("Conectando a la red P2P WebTorrent...");
 
-    console.log("Conectando a la red P2P WebTorrent...");
+      const opcionesTorrent = {
+        announce: [
+          'wss://tracker.webtorrent.dev',
+          'wss://tracker.openwebtorrent.com',
+          'wss://tracker.btorrent.xyz'
+        ]
+      };
 
-    torrentCliente.add(TORRENT_MAGNET, function (torrent) {
-        // Buscar el archivo de video dentro del torrent (mp4, webm, etc.)
+      torrentCliente.add(TORRENT_MAGNET, opcionesTorrent, function (torrent) {
         const file = torrent.files.find(function (f) {
-            return f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv');
+          return f.name.endsWith('.mp4') || f.name.endsWith('.webm') || f.name.endsWith('.mkv');
         });
 
         if (file) {
-            console.log("Archivo de video encontrado:", file.name);
+          console.log("✅ Archivo de video encontrado:", file.name);
 
-            // Obtener el elemento video HTML
-            const videoElement = document.getElementById('videoPlayer'); // Cambia por la ID de tu <video>
+          let reproductorMontado = false;
 
-            // 2. Usar renderTo de forma limpia (evita llamar renderTo dos veces)
-            file.renderTo(videoElement, {
-                autoplay: true,
-                controls: true
-            }, function (err, elem) {
+          torrent.on('download', function () {
+            // Actualizar métricas
+            const speedKB = (torrent.downloadSpeed / 1024).toFixed(2);
+            downloadSpeed.innerText = `${speedKB} KB/s`;
+            peerCount.innerText = `${torrent.numPeers} Pares conectados`;
+
+            // Búfer mínimo 300KB antes de intentar reproducir
+            if (!reproductorMontado && (torrent.downloaded > 300 * 1024 || torrent.progress > 0.01)) {
+              reproductorMontado = true;
+              console.log("▶️ Búfer inicial acumulado. Montando reproductor P2P...");
+
+              file.renderTo(videoPlayer, {
+                autoplay: false // Tomamos el control nosotros
+              }, function (err, elem) {
                 if (err) {
-                    console.error("Error al renderizar el video:", err);
-                } else {
-                    console.log("Reproducción P2P iniciada con éxito");
+                  console.error("❌ Error al renderizar el video:", err);
+                  return;
                 }
-            });
+                
+                console.log("🎬 Reproductor inyectado. Esperando confirmación de fotogramas...");
+
+                // ESCUCHAMOS CUANDO EL NAVEGADOR ESTÉ LISTO
+                elem.addEventListener('canplay', function() {
+                  console.log("🔋 Navegador listo. Intentando reproducir...");
+                  const playPromise = elem.play();
+                  
+                  if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                      console.log("▶️ Reproducción iniciada perfectamente con sonido.");
+                    }).catch(error => {
+                      // Si falla el sonido por expiración del token de clic, forzamos MUTE
+                      console.warn("⚠️ El navegador bloqueó el autoplay por sonido. Silenciando y forzando...", error);
+                      elem.muted = true;
+                      elem.play();
+                    });
+                  }
+                }, { once: true }); // Solo lo ejecutamos la primera vez
+              });
+            }
+          });
+
+          torrent.on('wire', function () {
+            peerCount.innerText = `${torrent.numPeers} Pares conectados`;
+          });
 
         } else {
-            console.error("No se encontró ningún archivo de video en este torrent.");
+          console.error("❌ No se encontró ningún archivo de video en este torrent.");
         }
-    });
-}
+      });
+    }
   </script>
 </body>
 </html>
