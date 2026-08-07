@@ -3,52 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Experimento 1: Video WebTorrent Pay-Per-View</title>
-  
-  <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
-  
+  <title>Nanflix - Streaming P2P & Micropagos Nano</title>
   <link rel="stylesheet" href="exp_video.css">
+  <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
 </head>
 <body>
 
-  <div class="header-nav">
-    <a href="index.html">← Volver al Buscador</a>
-    <span class="badge" id="payStatus">🔒 Contenido Protegido</span>
-  </div>
+  <header class="navbar">
+    <div class="logo">
+      <span class="nano-symbol">⚡</span>NANFLIX
+    </div>
+    <div class="nav-actions">
+      <div id="user-status-badge" class="status-badge status-free">
+        Plan: <strong id="current-plan-name">Freemium (SD)</strong>
+      </div>
+      <button class="btn btn-primary" onclick="openSubscriptionModal()">
+        🚀 Suscribirse (0.001 XNO/mes)
+      </button>
+    </div>
+  </header>
 
-  <div class="container">
-    <h1 style="margin-top: 0;">🎬 Video P2P Pay-Per-View</h1>
-    <p style="color: var(--subtext);">
-      Costo por reproducción: <strong>0.0001 XNO</strong><br>
-      <small>(El video se descargará directamente desde pares WebTorrent una vez confirmado el pago)</small>
-    </p>
-
-    <div class="player-wrapper" id="videoContainer">
-      <video id="videoPlayer" controls playsinline></video>
-      
-      <div class="overlay" id="videoOverlay">
-        <button class="btn-play" id="btnPlay" onclick="solicitarPagoVideo()">
-          ▶️ Desbloquear / Reproducir (0.00001 XNO)
+  <section class="hero" style="background-image: linear-gradient(to top, #141414, transparent), url('https://upload.wikimedia.org/wikipedia/commons/8/8f/Sintel_poster.jpg');">
+    <div class="hero-content">
+      <span class="badge badge-ppv">PAY-PER-VIEW • 0.0001 XNO</span>
+      <h1>Sintel</h1>
+      <p>Una joven guerrera emprende un peligroso viaje para rescatar a un bebé dragón robado. Un clásico de animación open-source.</p>
+      <div class="hero-buttons">
+        <button class="btn btn-play" onclick="selectContent('sintel', 'ppv', '0.0001')">
+          ▶ Reproducir (0.0001 XNO)
+        </button>
+        <button class="btn btn-secondary" onclick="selectContent('sintel', 'free', '0')">
+          👁 Ver en SD (Gratis con Ads/P2P)
         </button>
       </div>
     </div>
+  </section>
 
-    <div class="status-panel">
-      <div class="status-card nano">
-        <span>ESTADO MICROPAGO NANO</span>
-        <strong id="nanoTxStatus" style="color: #38bdf8;">Esperando acción...</strong>
+  <main class="catalog-container">
+    <h2>Catálogo Independiente & Dominio Público</h2>
+
+    <div class="movie-grid">
+
+      <div class="movie-card" onclick="selectContent('big-buck-bunny', 'free', '0')">
+        <div class="card-image">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.bip.jpg" alt="Big Buck Bunny">
+          <span class="badge badge-free">GRATIS (SD)</span>
+        </div>
+        <div class="card-info">
+          <h3>Big Buck Bunny</h3>
+          <p>Animación • 10 min</p>
+        </div>
       </div>
-      <div class="status-card">
-        <span>RED WEBTORRENT (PEERS)</span>
-        <strong id="peerCount">0 Pares conectados</strong>
+
+      <div class="movie-card" onclick="selectContent('tears-of-steel', 'ppv', '0.0005')">
+        <div class="card-image">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/0/0c/Tears_of_Steel_poster.jpg" alt="Tears of Steel">
+          <span class="badge badge-ppv">0.0005 XNO</span>
+        </div>
+        <div class="card-info">
+          <h3>Tears of Steel</h3>
+          <p>Sci-Fi / VFX • 12 min</p>
+        </div>
       </div>
-      <div class="status-card">
-        <span>VELOCIDAD DE DESCARGA</span>
-        <strong id="downloadSpeed">0 KB/s</strong>
+
+      <div class="movie-card" onclick="selectContent('night-living-dead', 'sub', '0')">
+        <div class="card-image">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/1/18/Night_of_the_Living_Dead_%281968%29_poster.jpg" alt="Night of the Living Dead">
+          <span class="badge badge-sub">EXCLUSIVO PREMIUM</span>
+        </div>
+        <div class="card-info">
+          <h3>Night of the Living Dead</h3>
+          <p>Terror / Clásico • 96 min</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="payment-modal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+      <h2 id="modal-title">Confirmar Acceso</h2>
+      
+      <div id="modal-body">
+        <p id="modal-description">Detalles de la transacción...</p>
+
+        <div class="pay-box">
+          <div class="price-display">
+            <span id="pay-amount">0.001</span> <small>XNO</small>
+          </div>
+          <p class="pay-instruction">
+            Envía el pago desde tu billetera o usa la extensión Web Limpia / Nault.
+          </p>
+
+          <div class="qr-placeholder">
+            <button id="pay-button" class="btn btn-primary btn-block">
+              ⚡ Pagar Ahora con Extensión Nano
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
+ <div id="player-modal" class="modal hidden">
+    <div class="modal-content modal-player">
+      <button class="close-btn" onclick="closePlayer()">&times;</button>
+      <h3 id="player-title">Reproduciendo...</h3>
+      
+      <div class="video-container" style="position: relative;">
+        <div id="video-loader" class="video-loader">
+          <div class="spinner"></div>
+          <p id="loader-status">⚡ Conectando a la red P2P...</p>
+        </div>
+
+        <video id="video-player" controls autoplay style="width:100%; height:auto;"></video>
+      </div>
+
+      <div class="p2p-stats">
+        <span>⚡ Peers: <strong id="stat-peers">0</strong></span>
+        <span>⬇ Descarga: <strong id="stat-download">0 KB/s</strong></span>
+        <span>⬆ Compartiendo (Seeding): <strong id="stat-upload">0 KB/s</strong></span>
+      </div>
+    </div>
+  </div>
   <script src="exp_video.js"></script>
 </body>
 </html>

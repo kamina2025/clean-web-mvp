@@ -1,144 +1,330 @@
 :root {
-  --bg: #0f172a;
-  --card-bg: #1e293b;
-  --accent: #10b981;
-  --nano-green: #4cb963;
-  --text: #f8fafc;
-  --subtext: #94a3b8;
+  --bg-color: #141414;
+  --card-bg: #1f1f1f;
+  --accent-color: #00d2ff;
+  --nano-blue: #4a90e2;
+  --free-green: #2ec4b6;
+  --ppv-orange: #ff9f1c;
+  --sub-purple: #9d4edd;
+  --text-main: #ffffff;
+  --text-muted: #aaaaaa;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background-color: var(--bg);
-  color: var(--text);
-  margin: 0;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background-color: var(--bg-color);
+  color: var(--text-main);
 }
 
-.header-nav {
-  width: 100%;
-  max-width: 800px;
+/* NAVBAR */
+.navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 15px 40px;
+  background: rgba(20, 20, 20, 0.95);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--accent-color);
+  letter-spacing: 2px;
+}
+
+.nano-symbol {
+  margin-right: 5px;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  background: #2a2a2a;
+  border: 1px solid #444;
+}
+
+/* BUTTONS */
+.btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.btn:hover {
+  transform: scale(1.03);
+}
+
+.btn-primary {
+  background: var(--nano-blue);
+  color: white;
+}
+
+.btn-play {
+  background: white;
+  color: black;
+  font-size: 1.1rem;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 1.1rem;
+  backdrop-filter: blur(5px);
+}
+
+.btn-block {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+}
+
+/* HERO BANNER */
+.hero {
+  height: 60vh;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  padding: 50px 40px;
+}
+
+.hero-content {
+  max-width: 600px;
+}
+
+.hero-content h1 {
+  font-size: 3.5rem;
+  margin: 10px 0;
+}
+
+.hero-content p {
+  color: var(--text-muted);
+  font-size: 1.1rem;
   margin-bottom: 20px;
 }
 
-.header-nav a {
-  color: #38bdf8;
-  text-decoration: none;
+.hero-buttons {
+  display: flex;
+  gap: 15px;
+}
+
+/* BADGES */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
   font-weight: bold;
+  text-transform: uppercase;
 }
 
-.container {
-  width: 100%;
-  max-width: 800px;
+.badge-free { background: var(--free-green); color: black; }
+.badge-ppv { background: var(--ppv-orange); color: black; }
+.badge-sub { background: var(--sub-purple); color: white; }
+
+/* CATALOG GRID */
+.catalog-container {
+  padding: 40px;
+}
+
+.catalog-container h2 {
+  margin-bottom: 20px;
+  font-size: 1.5rem;
+}
+
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 25px;
+}
+
+.movie-card {
   background: var(--card-bg);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-  text-align: center;
-}
-
-.player-wrapper {
-  position: relative;
-  width: 100%;
-  background: #000;
   border-radius: 8px;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 20px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-video {
+.movie-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+}
+
+.card-image {
+  position: relative;
+  height: 300px;
+}
+
+.card-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.overlay {
+.card-image .badge {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(15, 23, 42, 0.85);
+  top: 10px;
+  right: 10px;
+}
+
+.card-info {
+  padding: 15px;
+}
+
+.card-info h3 {
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+}
+
+.card-info p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* MODALS */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: 12px;
+  max-width: 480px;
+  width: 90%;
+  position: relative;
+}
+
+.modal-player {
+  max-width: 900px;
+}
+
+.close-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.8rem;
+  cursor: pointer;
+}
+
+.pay-box {
+  margin-top: 20px;
+  background: #141414;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.price-display {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+}
+
+.pay-instruction {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.p2p-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 15px;
+  font-size: 0.85rem;
+  color: var(--accent-color);
+  background: #141414;
+  padding: 10px;
+  border-radius: 6px;
+}
+/* ==========================================
+   LOADER P2P PARA EL REPRODUCTOR
+   ========================================== */
+.video-container {
+  position: relative;
+  min-height: 250px;
+  background-color: #000;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.video-loader {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 15, 15, 0.9);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 20px;
-  text-align: center;
-  transition: opacity 0.3s ease;
   z-index: 10;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-.btn-play {
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  padding: 14px 28px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
-  transition: transform 0.2s, background 0.2s;
+.video-loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
-.btn-play:hover {
-  transform: scale(1.05);
-  background: #059669;
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-left-color: #4c8bf5; /* Color acento / Nano blue */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
 }
 
-.status-panel {
-  margin-top: 20px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 12px;
-  text-align: left;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.status-card {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  border-left: 4px solid #38bdf8;
-}
-
-.status-card.nano {
-  border-left-color: var(--nano-green);
-}
-
-.status-card span {
-  display: block;
-  color: var(--subtext);
-  font-size: 0.75rem;
-  margin-bottom: 4px;
-}
-
-.status-card strong {
+#loader-status {
+  color: #e2e8f0;
   font-size: 0.95rem;
-  word-break: break-all;
-}
-
-.badge {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  background: #334155;
-}
-
-.badge.active {
-  background: var(--nano-green);
-  color: #000;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
