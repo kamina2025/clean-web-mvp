@@ -46,12 +46,37 @@
 
 | Archivo | Caso de Uso | Mecanismo de Monetización |
 | :--- | :--- | :--- |
-| `experimento_video.html` | Video a Demanda | Micropago directo al hacer clic en "Reproducir Video". |
+| `exp_video/exp_video.html` | Video a Demanda | Micropago directo al hacer clic en "Reproducir Video". |
 | `experimento_galeria.html` | Galería de Arte / Fotos | Sistema de Likes y Propinas instantáneas al creador. |
-| `experimento_musica.html` | Streaming de Audio | Micropago imperceptible al dar Play a las pistas. |
-| `constructor.html` | Panel de Creadores | Emisión del manifiesto `cleanweb.json` y registro en el indexador. |
+| `exp_musica/exp_musica.html` | Streaming de Audio | Micropago imperceptible al dar Play a las pistas. |
+| `registrador-creador.html` | Panel de Creadores | Emisión del manifiesto `cleanweb.json` y registro en el indexador. |
 
 ---
+## 🚀 Nota para Probadores y Colaboradores
+
+¡Gracias por probar y revisar este MVP! 
+
+Por favor, ten en cuenta las siguientes consideraciones durante tus pruebas:
+
+* **Dirección de Pagos:** Todas las transacciones y micropagos de prueba realizados dentro de la aplicación están dirigidos automáticamente a la **billetera oficial del proyecto**.
+* **Apoyo al Proyecto:** Agradecemos enormemente cualquier contribución o prueba real que realices con pequeñas fracciones de **Nano (XNO)**. Cada micropago ayuda a validar la red en un entorno real y a sostener el desarrollo del proyecto.
+
+---
+
+## 🎵 Créditos y Atribución del Artista
+
+La música utilizada para las pruebas de este MVP se distribuye bajo licencias de uso libre y abierto:
+
+* **Artista:** Jon Shuemaker
+* **Música y Licencia:** [Perfil de Jon Shuemaker en Free Music Archive](https://freemusicarchive.org/music/jon-shuemaker/)
+
+---
+
+## 📦 Recursos de Prueba (Torrents)
+
+Si deseas inspeccionar los archivos `.torrent` utilizados para las semillas y pruebas P2P con WebTorrent, puedes acceder a la carpeta pública de prueba:
+
+* **Carpeta de Torrents en Google Drive:** [Descargar Torrents de Prueba](https://drive.google.com/drive/folders/1TmMkKtmrvAGCgduzs3icvtdJ_xWXEflq?usp=sharing)
 
 ## 🛡️ Principios de Privacidad
 
