@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MVP: Simulador P2P - Choking con Micropagos</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 20px; }
+    h1 { color: #38bdf8; text-align: center; }
+    .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1000px; margin: 0 auto; }
+    .card { background: #1e293b; border-radius: 8px; padding: 20px; border: 1px solid #334155; }
+    .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.85em; }
+    .choked { background-color: #ef4444; color: #fff; }
+    .unchoked { background-color: #22c55e; color: #fff; }
+    .btn { background: #0284c7; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+    .btn:hover { background: #0369a1; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .log-box { background: #090d16; border-radius: 6px; padding: 10px; height: 180px; overflow-y: auto; font-family: monospace; font-size: 0.85em; color: #a7f3d0; margin-top: 10px; border: 1px solid #1e293b; }
+    .progress-bar { width: 100%; background: #334155; border-radius: 8px; height: 20px; margin-top: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #38bdf8; width: 0%; transition: width 0.3s; }
+  </style>
+</head>
+<body>
+
+  <h1>Simulador de Protocolo P2P: Choke / Unchoke + Micropagos</h1>
+
+  <div class="container">
+    <div class="card">
+      <h2>👤 Cliente (Leecher)</h2>
+      <p><b>Dirección Billetera:</b> <code id="clientWallet">nano_1client_999...</code></p>
+      <p><b>Saldo Escrow Disponibles:</b> <span id="clientBalance" style="color:#facc15;">0.0050</span> XNO</p>
+      <p><b>Progreso Descarga Archivo:</b></p>
+      <div class="progress-bar">
+        <div id="progressBar" class="progress-fill"></div>
+      </div>
+      <p><span id="chunksDownloaded">0</span> / 10 Chunks Recibidos</p>
+
+      <button class="btn" onclick="enviarMicropago()">💳 Depositar & Enviar Vale (0.0010 XNO)</button>
+    </div>
+
+    <div class="card">
+      <h2>📡 Seeder (Nodo Sembrador)</h2>
+      <p><b>Estado del Par (Peer State):</b> 
+        <span id="seederStatus" class="status-badge choked">CHOKED (Bloqueado)</span>
+      </p>
+      <p><b>Crédito Autorizado Actual:</b> <span id="seederCredit">0</span> Chunks</p>
+      <p><b>Billetera Cobro Seeder:</b> <code>nano_3seeder_777...</code></p>
+      <p><b>Ganancias Acumuladas:</b> <span id="seederEarnings" style="color:#4ade80;">0.0000</span> XNO</p>
+
+      <button class="btn btn-danger" onclick="detenerVales()">⛔ Interrumpir Pagos (Simular Moroso)</button>
+    </div>
+  </div>
+
+  <div style="max-width: 1000px; margin: 20px auto;">
+    <div class="card">
+      <h3>📜 Registro de Eventos del Protocolo (Wire Logs)</h3>
+      <div id="logs" class="log-box"></div>
+    </div>
+  </div>
+
+  <script>
+    // ESTADO DE LA SIMULACIÓN
+    const CHUNK_SIZE_PRICE = 0.0005; // Costo por chunk en XNO
+    const TOTAL_CHUNKS = 10;
+    
+    let state = {
+      chunksDownloaded: 0,
+      clientBalance: 0.0050,
+      seederCreditChunks: 0,
+      seederStatus: 'CHOKED',
+      seederEarnings: 0.0,
+      isDownloading: false,
+      autoPay: true
+    };
+
+    function log(msg) {
+      const logBox = document.getElementById('logs');
+      const time = new Date().toLocaleTimeString();
+      logBox.innerHTML += `[${time}] ${msg}<br>`;
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function updateUI() {
+      document.getElementById('clientBalance').innerText = state.clientBalance.toFixed(4);
+      document.getElementById('chunksDownloaded').innerText = state.chunksDownloaded;
+      document.getElementById('seederCredit').innerText = state.seederCreditChunks;
+      document.getElementById('seederEarnings').innerText = state.seederEarnings.toFixed(4);
+      
+      const percent = (state.chunksDownloaded / TOTAL_CHUNKS) * 100;
+      document.getElementById('progressBar').style.width = `${percent}%`;
+
+      const badge = document.getElementById('seederStatus');
+      if (state.seederStatus === 'UNCHOKED') {
+        badge.innerText = 'UNCHOKED (Transmitiendo)';
+        badge.className = 'status-badge unchoked';
+      } else {
+        badge.innerText = 'CHOKED (Bloqueado)';
+        badge.className = 'status-badge choked';
+      }
+    }
+
+    function enviarMicropago() {
+      if (state.clientBalance < CHUNK_SIZE_PRICE * 2) {
+        log("❌ [CLIENTE] Saldo insuficiente en la billetera de depósito.");
+        return;
+      }
+
+      // El cliente prepara un vale de micropago (p.ej. cubre 2 chunks)
+      const amount = CHUNK_SIZE_PRICE * 2;
+      state.clientBalance -= amount;
+      
+      log(`💸 [CLIENTE] Vale firmado enviado al Seeder por ${amount.toFixed(4)} XNO (Autoriza 2 Chunks)`);
+      
+      // El Seeder recibe el vale, verifica firma y cambia a UNCHOKE
+      recibirValeEnSeeder(amount, 2);
+    }
+
+    function recibirValeEnSeeder(monto, chunksComprados) {
+      state.seederEarnings += monto;
+      state.seederCreditChunks += chunksComprados;
+      
+      if (state.seederStatus === 'CHOKED') {
+        state.seederStatus = 'UNCHOKED';
+        log("✅ [SEEDER] Vale verificado exitosamente. Transición de estado: CHOKED ➔ UNCHOKED.");
+      }
+      
+      updateUI();
+
+      if (!state.isDownloading) {
+        iniciarBucleDescarga();
+      }
+    }
+
+    function iniciarBucleDescarga() {
+      state.isDownloading = true;
+
+      const interval = setInterval(() => {
+        if (state.chunksDownloaded >= TOTAL_CHUNKS) {
+          log("🎉 [SISTEMA] ¡Archivo descargado completamente con éxito!");
+          state.seederStatus = 'CHOKED';
+          state.isDownloading = false;
+          updateUI();
+          clearInterval(interval);
+          return;
+        }
+
+        // Verificar si el Seeder tiene crédito para enviar el siguiente Chunk
+        if (state.seederCreditChunks > 0 && state.seederStatus === 'UNCHOKED') {
+          state.chunksDownloaded++;
+          state.seederCreditChunks--;
+          log(`📦 [SEEDER ➔ CLIENTE] Chunk #${state.chunksDownloaded} entregado exitosamente.`);
+          
+          updateUI();
+        } else {
+          // Si no hay más crédito, el Seeder estrangula la conexión
+          state.seederStatus = 'CHOKED';
+          log("⚠️ [SEEDER] Crédito agotado. Se aplica ESTRANGULAMIENTO (CHOKE). Esperando nuevo vale...");
+          updateUI();
+
+          // Intentar autopago si está activo
+          if (state.autoPay && state.clientBalance >= CHUNK_SIZE_PRICE * 2) {
+            log("🤖 [CLIENTE] Auto-pago activado: Generando nuevo vale automático...");
+            enviarMicropago();
+          } else {
+            state.isDownloading = false;
+            clearInterval(interval);
+          }
+        }
+      }, 1500); // Entrega 1 chunk cada 1.5 segundos
+    }
+
+    function detenerVales() {
+      state.autoPay = false;
+      log("🚫 [SIMULACIÓN] Auto-pagos del cliente desactivados. El Seeder se detendrá tras agotar el crédito actual.");
+    }
+
+    // Inicializar UI
+    log("🚀 Simulador iniciado. Seeder en estado CHOKED por defecto.");
+    updateUI();
+  </script>
+</body>
+</html>
